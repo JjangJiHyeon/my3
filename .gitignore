@@ -23,3 +23,5 @@ tests_run/
 tmp_*.py
 tmp_*.js
 test_phase3_output.txt
+
+documents/
