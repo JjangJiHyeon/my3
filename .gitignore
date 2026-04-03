@@ -1,10 +1,11 @@
 __pycache__/
 *.pyc
+
 parsed_results/
-documents/
 .venv/
 env/
 .env
+
 # generated outputs
 *_llm_ready.json
 *_llm_report.md
@@ -22,7 +23,3 @@ tests_run/
 tmp_*.py
 tmp_*.js
 test_phase3_output.txt
-
-# python cache
-__pycache__/
-*.pyc
