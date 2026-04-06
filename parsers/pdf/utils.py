@@ -139,7 +139,9 @@ def is_visual_noise_text(text: str) -> bool:
         
     meaningful = re.findall(r'[a-zA-Z가-힣]', clean)
     if not meaningful or len(meaningful) < 2: return True
-    # ── Table Extraction ──────────────────────────────────────────────
+    return False
+
+# ── Table Extraction ──────────────────────────────────────────────
 
 def extract_tables_via_pdfplumber(filepath: str, page_count: int) -> dict[int, list]:
     import pdfplumber

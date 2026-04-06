@@ -131,6 +131,10 @@ def parse_pdf(filepath: str) -> dict[str, Any]:
     # The user requires pipeline_used and document_type to ALWAYS match.
     # We use the pipeline_name (without '_pipeline' suffix) as the definitive document_type.
     doc_type_from_pipeline = pipeline_name.replace("_pipeline", "")
+    refined_doc_type = final_routing.get("document_type", doc_type_from_pipeline)
+    routing_confidence = final_routing.get("confidence", 0.0)
+    page_type_distribution = final_routing.get("page_type_distribution")
+    routing_reasons = final_routing.get("routing_reasons")
     
     doc.close()
     
@@ -140,7 +144,7 @@ def parse_pdf(filepath: str) -> dict[str, Any]:
     empty_pages = sum(1 for p in pages if not p.get("blocks"))
     quality = _assess_quality(pages, ocr_page_nums, empty_pages)
 
-    mismatch = (final_routing.get("document_type") != doc_type_from_pipeline)
+    mismatch = (refined_doc_type != doc_type_from_pipeline)
 
     metadata.update({
         "parser_used": "Modular Pipeline (" + pipeline_name + ")",
@@ -148,7 +152,12 @@ def parse_pdf(filepath: str) -> dict[str, Any]:
         "text_quality": quality,
         "empty_pages": empty_pages,
         "document_type": doc_type_from_pipeline,
+        "refined_document_type": refined_doc_type,
+        "doc_type": refined_doc_type,
         "pipeline_used": pipeline_name,
+        "routing_confidence": routing_confidence,
+        "page_type_distribution": page_type_distribution,
+        "routing_reasons": routing_reasons,
         "routing_signals": final_routing.get("routing_signals"),
         "routing_reason": final_routing.get("routing_reason"),
         "routing_mismatch_flag": mismatch
@@ -159,7 +168,7 @@ def parse_pdf(filepath: str) -> dict[str, Any]:
 
     if mismatch:
         metadata["initial_routing_type"] = initial_doc_type
-        metadata["refined_routing_type"] = final_routing.get("document_type")
+        metadata["refined_routing_type"] = refined_doc_type
         metadata["routing_mismatch_flag"] = True
 
     return {"pages": pages, "metadata": metadata, "status": "success"}
@@ -206,6 +215,8 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
     classification_overrides = []
     dedup_stats = {}
     text_merge_stats = {}
+    pipeline_used_early = page_result.get("parser_debug", {}).get("pipeline_used", "")
+    skip_paragraph_merge = pipeline_used_early == "slide_ir_pipeline"
     
     # 2.1 Reclassify Images (based on text density)
     valid_blocks = _reclassify_images(valid_blocks, pw, ph, quality_notes, classification_overrides, dropped)
@@ -213,11 +224,22 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
     # 2.2 Deduplicate (Native vs OCR overlap)
     valid_blocks = _deduplicate_blocks(valid_blocks, merge_events, dedup_stats, quality_notes)
     
-    # 2.3 Merge Adjacent Text (Paragraph restoration)
-    valid_blocks = _merge_adjacent_text_blocks(valid_blocks, merge_events, text_merge_stats, pw, ph)
+    # 2.3 Merge Adjacent Text (Paragraph restoration) — skipped for slide_ir; card merge runs later
+    if not skip_paragraph_merge:
+        valid_blocks = _merge_adjacent_text_blocks(valid_blocks, merge_events, text_merge_stats, pw, ph)
     
     # 2.4 Layout Inference
     layout_hint = _infer_page_layout_hint(valid_blocks, pw, ph)
+    pipeline_postprocess = page_result.pop("_pipeline_postprocess", None)
+    if callable(pipeline_postprocess):
+        valid_blocks, layout_hint = pipeline_postprocess(
+            valid_blocks,
+            pw,
+            ph,
+            layout_hint,
+            merge_events,
+            quality_notes,
+        )
     
     # 2.5 Pipeline-specific Post-processing
     pipeline_used = page_result.get("parser_debug", {}).get("pipeline_used", "")
@@ -228,6 +250,7 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
     
     # 2.6 Reading Order
     valid_blocks, actual_strategy, strategy_basis = _sort_reading_order(valid_blocks, layout_hint, pw, ph)
+    valid_blocks, table_debug = _enrich_table_blocks(valid_blocks, pw, ph, quality_notes)
     
     page_result["blocks"] = valid_blocks
     dbg = page_result.setdefault("parser_debug", {})
@@ -241,12 +264,44 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
     dbg["classification_overrides"] = classification_overrides
     dbg["dedup_stats"] = dedup_stats
     dbg["text_merge_stats"] = text_merge_stats
+    dbg["table_enrichment"] = table_debug
     
-    # 3. Downstream Signal Aggregation
-    # Consolidate text for total_chars calculation and fallback view
+    # 3. OCR Fallback for text-poor pages in modular path
     consolidated_text = "\n\n".join(b["text"] for b in valid_blocks if b.get("text") and b["type"] != "footer")
+    image_block_count = sum(1 for b in valid_blocks if b["type"] in ("image", "chart"))
+    page_result["ocr_applied"] = False
+
+    if len(consolidated_text) < OCR_TEXT_THRESHOLD and image_block_count >= OCR_IMAGE_MIN:
+        try:
+            from .ocr_utils import run_ocr_on_image
+            mat = fitz.Matrix(2.0, 2.0)
+            pix = page.get_pixmap(matrix=mat)
+            img_arr = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
+            ocr_result = run_ocr_on_image(img_arr, page_width=pw, page_height=ph, zoom=2.0)
+            if ocr_result.get("success") and ocr_result.get("text", "").strip():
+                ocr_text = ocr_result["text"].strip()
+                if len(ocr_text) > len(consolidated_text):
+                    valid_blocks.append({
+                        "id": f"p{page_idx+1}_ocr0",
+                        "type": "text",
+                        "bbox": [0, 0, round(pw, 2), round(ph, 2)],
+                        "text": ocr_text,
+                        "page_num": page_idx + 1,
+                        "source": "ocr_fallback",
+                        "score": 0.6,
+                        "meta": {"recovery_source": "ocr", "summary_priority": "medium"},
+                    })
+                    page_result["ocr_applied"] = True
+                    consolidated_text = "\n\n".join(
+                        b["text"] for b in valid_blocks if b.get("text") and b["type"] != "footer"
+                    )
+                    dbg["ocr_fallback_chars"] = len(ocr_text)
+                    quality_notes.append("ocr_fallback_applied")
+        except Exception as ocr_exc:
+            dbg["ocr_fallback_error"] = str(ocr_exc)
+
     page_result["text"] = consolidated_text
-    
+
     # RAG-Ready Text Stream Generation
     rag_text = _generate_rag_text(valid_blocks)
     page_result["rag_text"] = rag_text
@@ -267,6 +322,117 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
     page_result["parser_debug"]["block_type_counts"] = type_counts
     
     return page_result
+
+
+def _enrich_table_blocks(blocks: list[dict], pw: float, ph: float, quality_notes: list) -> tuple[list[dict], dict[str, Any]]:
+    from .table_utils import detect_table_candidates, normalize_table_candidate, score_table_quality, choose_best_table_candidate
+
+    if not blocks:
+        return blocks, {"candidate_count": 0, "kept_table_count": 0, "rejected_candidate_count": 0, "reject_reason_counts": {}}
+
+    detect_table_candidates(pw, ph, blocks)
+    table_candidates = []
+    reject_reason_counts: dict[str, int] = {}
+    rejected_candidate_count = 0
+
+    for block in blocks:
+        meta = block.setdefault("meta", {})
+        if block["type"] != "table" and meta.get("table_candidate_score", 0) <= 1.0:
+            continue
+
+        source_name = str(block.get("source", "native")).lower()
+        source_type = "camelot" if "camelot" in source_name else "pdfplumber" if "pdfplumber" in source_name else "ocr" if "ocr" in source_name else "native"
+        raw_data = (
+            meta.get("normalized_table")
+            or meta.get("rows")
+            or meta.get("cells")
+            or meta.get("normalized_table_rows")
+            or block.get("text", "")
+        )
+        norm_tbl = normalize_table_candidate(raw_data, source_type, block.get("text"))
+        quality_score = score_table_quality(norm_tbl)
+
+        reject_signals = meta.setdefault("table_reject_signals", [])
+        for reason in norm_tbl.get("reject_signals", []):
+            if reason not in reject_signals:
+                reject_signals.append(reason)
+
+        severe_rejects = {
+            "giant_dump_table",
+            "collapsed_row_table",
+            "mixed_narrative_table",
+            "non_rectangular_sparse_table",
+            "single_column_pseudo_table",
+            "symbolic_pseudo_table",
+            "long_text_dump_table",
+            "mostly_empty_cells",
+        }
+        if block["type"] == "table" and (quality_score < 0.5 or any(reason in severe_rejects for reason in reject_signals)):
+            block["type"] = "unknown"
+            meta["classification_reason"] = "low_quality_table_candidate"
+            rejected_candidate_count += 1
+            for reason in reject_signals:
+                reject_reason_counts[reason] = reject_reason_counts.get(reason, 0) + 1
+            continue
+
+        meta["normalized_table"] = norm_tbl
+        meta["table_quality"] = quality_score
+        meta["table_quality_details"] = norm_tbl.get("quality", {})
+        meta["table_markdown"] = norm_tbl.get("markdown", "")
+        meta["table_selection_reason"] = norm_tbl.get("quality", {}).get("selection_reason") or (
+            f"kept_quality={quality_score:.2f}, rejects={','.join(reject_signals) if reject_signals else 'none'}"
+        )
+        table_candidates.append(block)
+
+    if not table_candidates:
+        return blocks, {
+            "candidate_count": rejected_candidate_count,
+            "kept_table_count": 0,
+            "rejected_candidate_count": rejected_candidate_count,
+            "reject_reason_counts": reject_reason_counts,
+        }
+
+    dropped_ids = set()
+    for table_block in table_candidates:
+        if table_block["id"] in dropped_ids:
+            continue
+
+        group = [table_block]
+        for other in table_candidates:
+            if other["id"] == table_block["id"] or other["id"] in dropped_ids:
+                continue
+            if _rects_overlap(table_block["bbox"], other["bbox"], 0.5):
+                group.append(other)
+                dropped_ids.add(other["id"])
+
+        if len(group) <= 1:
+            continue
+
+        norm_candidates = [candidate.get("meta", {}).get("normalized_table") for candidate in group if candidate.get("meta", {}).get("normalized_table")]
+        best_norm = choose_best_table_candidate(norm_candidates)
+        if not best_norm:
+            continue
+
+        for candidate in group:
+            meta = candidate.setdefault("meta", {})
+            if meta.get("normalized_table") != best_norm:
+                candidate["type"] = "unknown"
+                meta["classification_reason"] = "inferior_overlapping_table_candidate"
+                dropped_ids.add(candidate["id"])
+            else:
+                meta["table_selection_reason"] = best_norm.get("quality", {}).get("selection_reason")
+
+    kept_blocks = [block for block in blocks if block["id"] not in dropped_ids or block["type"] != "unknown"]
+    if any(block.get("meta", {}).get("table_quality") is not None for block in kept_blocks):
+        quality_notes.append("table_quality_enrichment_applied")
+    kept_table_count = sum(1 for block in kept_blocks if block.get("type") == "table")
+    candidate_count = len(table_candidates) + rejected_candidate_count
+    return kept_blocks, {
+        "candidate_count": candidate_count,
+        "kept_table_count": kept_table_count,
+        "rejected_candidate_count": max(0, candidate_count - kept_table_count),
+        "reject_reason_counts": reject_reason_counts,
+    }
 
 
 
@@ -683,8 +849,13 @@ def _merge_slide_cards(blocks: list[dict], merge_events: list) -> list[dict]:
             elif (r_1 == "kpi_metric" or r_2 == "kpi_metric") and -10 <= y_gap <= 30 and x_diff < 50:
                 is_same_card = True
                 
-            # 3. Very close horizontally and vertically aligned (same physical group)
-            elif -10 <= y_gap <= 15 and x_diff < 20:
+            # 3. Same slide_role body fragments only (avoid cross-column merges)
+            elif (
+                r_1 == r_2
+                and r_1 in ("body_note", "bullet_item", "kpi_metric")
+                and -5 <= y_gap <= 12
+                and x_diff < 15
+            ):
                 is_same_card = True
                 
             if is_same_card:
@@ -1023,14 +1194,18 @@ def _generate_rag_text(blocks: list[dict]) -> str:
         elif btype == "table":
             # Table Summary Logic
             table_data = b.get("meta", {}).get("normalized_table", [])
-            if table_data:
-                rows = len(table_data)
-                cols = len(table_data[0]) if rows > 0 else 0
+            if isinstance(table_data, dict):
+                table_rows = table_data.get("rows", [])
+            else:
+                table_rows = table_data
+            if table_rows:
+                rows = len(table_rows)
+                cols = len(table_rows[0]) if rows > 0 else 0
                 
                 # Extract first 2 rows for context (headers often here)
                 header_context = []
                 for r in range(min(2, rows)):
-                    row_cells = [str(c).strip() if c else "" for c in table_data[r]]
+                    row_cells = [str(c).strip() if c else "" for c in table_rows[r]]
                     header_context.append(" | ".join(row_cells))
                 
                 sum_str = f"\n[TABLE: {rows} rows, {cols} columns]\n"
@@ -1040,9 +1215,14 @@ def _generate_rag_text(blocks: list[dict]) -> str:
             else:
                 parts.append("\n[TABLE: (No structured data extracted)]\n")
         elif btype in ("image", "chart"):
-            # Minimal summary for visuals
-            parts.append(f"\n[VISUAL: {btype.upper()} at {b['bbox']}]\n")
-            
+            caption = b.get("meta", {}).get("caption_text", "")
+            if caption:
+                parts.append(f"\n[VISUAL: {caption}]\n")
+            else:
+                parts.append(f"\n[VISUAL: {btype.upper()} at {b['bbox']}]\n")
+        elif btype == "unknown" and text:
+            parts.append(f"\n[NOTE: {text[:500]}]\n")
+
     return "\n\n".join(parts).strip()
 
 def _assign_block_scores(blocks: list[dict]):
@@ -1835,7 +2015,13 @@ def _process_page(
             source = str(b.get("source", "native"))
             
             # Note: _validate_and_format_block moves "extra" to "meta"
-            raw_data = b.get("meta", {}).get("rows", b.get("text", ""))
+            meta_obj = b.get("meta", {})
+            raw_data = (
+                meta_obj.get("normalized_table")
+                or meta_obj.get("rows")
+                or meta_obj.get("cells")
+                or b.get("text", "")
+            )
             
             norm_tbl = normalize_table_candidate(raw_data, source, b.get("text"))
             quality_score = score_table_quality(norm_tbl)
@@ -1851,6 +2037,8 @@ def _process_page(
             
             b["meta"]["normalized_table"] = norm_tbl
             b["meta"]["table_quality"] = quality_score
+            b["meta"]["table_quality_details"] = norm_tbl.get("quality", {})
+            b["meta"]["table_markdown"] = norm_tbl.get("markdown", "")
             table_candidates.append(b)
 
     # 4. Filter overlapping tables / Multi-engine selection

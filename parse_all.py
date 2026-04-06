@@ -1,27 +1,21 @@
 import sys
 import os
-import shutil
 import json
+from pathlib import Path
 
-base_dir = r"c:\Users\jihyeon\Desktop\my"
+base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, base_dir)
 
 from app import parsed_cache, DOC_DIR, RESULT_DIR, _doc_id, _save_result
+from artifact_cleanup import cleanup_generated_artifacts
 from parsers import parse_document, SUPPORTED_EXTENSIONS
 from parsers.pdf_parser import set_result_dir
 
 set_result_dir(RESULT_DIR)
 
-# Clear old cache files
-print("Clearing old parsed results...")
-for f in os.listdir(RESULT_DIR):
-    fpath = os.path.join(RESULT_DIR, f)
-    if os.path.isfile(fpath) and f.endswith(".json"):
-        os.remove(fpath)
-    elif os.path.isdir(fpath):
-        import shutil
-        shutil.rmtree(fpath, ignore_errors=True)
-
+PROJECT_ROOT = Path(base_dir).resolve()
+print("Batch/full refresh: cleanup_generated_artifacts (same policy as app parse-all)...")
+cleanup_generated_artifacts(PROJECT_ROOT, parsed_results_dir=Path(RESULT_DIR))
 parsed_cache.clear()
 
 results = []

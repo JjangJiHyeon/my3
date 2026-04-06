@@ -4,6 +4,9 @@ FastAPI backend for the multi-format document parser.
 Configuration via environment variables:
   DOC_DIR     – directory containing source documents  (default: ./documents)
   RESULT_DIR  – directory for cached parse results      (default: ./parsed_results)
+  CLEAN_GENERATED_ON_STARTUP – if "1", delete generated artifacts on server start
+       (parsed_results JSON/review/previews, exports/, root *_llm_*.json, etc.)
+       Default "0". Same as legacy DEV_CLEAR_RESULTS_ON_START if the latter is "1".
 """
 
 from __future__ import annotations
@@ -19,7 +22,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 
+from artifact_cleanup import cleanup_generated_artifacts
+from export_to_gpt import write_root_llm_exports
 from parsers import parse_document, SUPPORTED_EXTENSIONS, PARSER_VERSION
+from review_export import save_all_parse_outputs
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,9 +38,10 @@ RESULT_DIR: str = os.getenv(
     "RESULT_DIR",
     os.path.join(os.path.dirname(__file__), "parsed_results"),
 )
-DEV_CLEAR_RESULTS_ON_START: bool = os.getenv("DEV_CLEAR_RESULTS_ON_START", "0") == "1"
-
-
+PROJECT_ROOT = Path(__file__).resolve().parent
+CLEAN_GENERATED_ON_STARTUP: bool = (
+    os.getenv("CLEAN_GENERATED_ON_STARTUP", os.getenv("DEV_CLEAR_RESULTS_ON_START", "0")) == "1"
+)
 
 os.makedirs(DOC_DIR, exist_ok=True)
 os.makedirs(RESULT_DIR, exist_ok=True)
@@ -49,12 +56,18 @@ async def lifespan(application: FastAPI):
     except Exception as exc:
         logger.warning("Could not set RESULT_DIR on pdf_parser: %s", exc)
 
-    if DEV_CLEAR_RESULTS_ON_START:
-        _clear_cache_dir()
+    if CLEAN_GENERATED_ON_STARTUP:
+        logger.info("CLEAN_GENERATED_ON_STARTUP: clearing generated artifacts")
+        cleanup_generated_artifacts(
+            PROJECT_ROOT,
+            parsed_results_dir=Path(RESULT_DIR),
+        )
+        parsed_cache.clear()
 
     _warm_cache()
     logger.info("DOC_DIR    = %s", DOC_DIR)
     logger.info("RESULT_DIR = %s", RESULT_DIR)
+    logger.info("CLEAN_GENERATED_ON_STARTUP = %s", CLEAN_GENERATED_ON_STARTUP)
     yield
 
 
@@ -65,33 +78,6 @@ parsed_cache: dict[str, dict[str, Any]] = {}
 
 # ── helpers ──────────────────────────────────────────────────────────
 
-def _clear_cache_dir() -> None:
-    """Clear JSON files and preview directories for DEV mode."""
-    import shutil
-    json_removed = 0
-    previews_removed = False
-    logger.info("DEV mode: clearing parsed results on startup")
-    try:
-        for name in os.listdir(RESULT_DIR):
-            if name.endswith(".json"):
-                os.remove(os.path.join(RESULT_DIR, name))
-                json_removed += 1
-        
-        preview_dir = os.path.join(RESULT_DIR, "previews")
-        if os.path.exists(preview_dir):
-            shutil.rmtree(preview_dir)
-            previews_removed = True
-            
-        logger.info("Removed %d cached json files", json_removed)
-        if previews_removed:
-            logger.info("Removed preview directory %s", preview_dir)
-            
-        parsed_cache.clear()
-        
-    except Exception as exc:
-        logger.warning("Failed to clear cache directory: %s", exc)
-
-
 def _doc_id(filepath: str) -> str:
     return hashlib.md5(filepath.encode("utf-8")).hexdigest()
 
@@ -101,10 +87,8 @@ def _result_path(doc_id: str) -> Path:
 
 
 def _save_result(doc_id: str, data: dict[str, Any]) -> None:
-    data["parser_version"] = PARSER_VERSION
     try:
-        with open(_result_path(doc_id), "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        save_all_parse_outputs(doc_id, data, RESULT_DIR, PARSER_VERSION)
     except Exception as exc:
         logger.warning("Failed to persist result %s: %s", doc_id, exc)
 
@@ -204,9 +188,19 @@ async def parse_single(doc_id: str):
             continue
         fpath = os.path.join(DOC_DIR, fname)
         if _doc_id(fpath) == doc_id:
-            result = parse_document(fpath)
-            parsed_cache[doc_id] = result
+            try:
+                result = parse_document(fpath)
+            except Exception as exc:
+                logger.exception("parse_document failed for %s", doc_id)
+                raise HTTPException(500, f"Parse failed: {exc}") from exc
+            if result.get("status") == "error":
+                return result
             _save_result(doc_id, result)
+            try:
+                write_root_llm_exports(result, PROJECT_ROOT)
+            except Exception as exc:
+                logger.warning("write_root_llm_exports failed: %s", exc)
+            parsed_cache[doc_id] = result
             return result
     raise HTTPException(404, "Document not found")
 
@@ -225,6 +219,11 @@ async def get_parsed(doc_id: str):
 
 @app.post("/api/parse-all")
 async def parse_all():
+    cleanup_generated_artifacts(
+        PROJECT_ROOT,
+        parsed_results_dir=Path(RESULT_DIR),
+    )
+    parsed_cache.clear()
     results: list[dict[str, Any]] = []
     for fname in sorted(os.listdir(DOC_DIR)):
         ext = os.path.splitext(fname)[1].lower()

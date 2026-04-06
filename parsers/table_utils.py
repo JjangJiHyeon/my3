@@ -6,6 +6,7 @@ normalizing multi-engine table results, and choosing the best table format.
 
 import math
 import re
+from collections import Counter
 from typing import Any, Dict, List
 
 # ── 1. Table Candidate Selection ────────────────────────────────────────
@@ -27,9 +28,10 @@ def detect_table_candidates(page_width: float, page_height: float, blocks: List[
         signals = []
         rejects = []
         score = 1.0  # Start with a base neutral score
+        raw_rows = meta.get("normalized_table") or meta.get("rows") or meta.get("cells") or []
 
         # 2. Engine signals (High confidence)
-        if b_source in ("camelot", "pdfplumber"):
+        if "camelot" in b_source or "pdfplumber" in b_source:
             score += 3.0
             signals.append(f"engine={b_source}")
 
@@ -81,6 +83,33 @@ def detect_table_candidates(page_width: float, page_height: float, blocks: List[
             elif num_density < 0.02 and b_type != "image":
                 score -= 2.0
                 rejects.append("low_numeric_density")
+
+        # 4.5 Structured table quality preview
+        if isinstance(raw_rows, list) and raw_rows and isinstance(raw_rows[0], (list, tuple)):
+            preview_source = "camelot" if "camelot" in b_source else "pdfplumber" if "pdfplumber" in b_source else "native"
+            preview = normalize_table_candidate(raw_rows, preview_source, text[:120] or None)
+            preview_score = score_table_quality(preview)
+            pq = preview.get("quality", {})
+            score += max(-2.5, min(3.5, preview_score * 0.45))
+
+            if pq.get("empty_cell_ratio", 1.0) < 0.45:
+                score += 1.0
+                signals.append("structured_fill_ratio_ok")
+            if pq.get("row_length_stability", 0.0) > 0.65:
+                score += 1.0
+                signals.append("stable_row_shape")
+            if pq.get("header_likelihood", 0.0) > 0.5:
+                score += 0.8
+                signals.append("header_likely")
+            if pq.get("long_text_row_ratio", 1.0) > 0.45:
+                score -= 3.0
+                rejects.append("long_text_dump_table")
+            if pq.get("empty_cell_ratio", 0.0) > 0.78:
+                score -= 3.0
+                rejects.append("mostly_empty_cells")
+            if pq.get("row_length_stability", 1.0) < 0.28:
+                score -= 2.5
+                rejects.append("unstable_row_shape")
         
         # 5. Visual/Geometric Rejection (KPI, Deco, Logo)
         bbox = b.get("bbox", [0, 0, page_width, page_height])
@@ -263,6 +292,8 @@ def is_summary_ready_table(norm_table: Dict[str, Any]) -> tuple[bool, str]:
     if "micro_fragment_table" in reject_signals: return False, "micro_fragment_table"
     if "mixed_narrative_table" in reject_signals: return False, "mixed_narrative_table"
     if "non_rectangular_sparse_table" in reject_signals: return False, "non_rectangular_sparse_table"
+    if "single_column_pseudo_table" in reject_signals: return False, "single_column_pseudo_table"
+    if "symbolic_pseudo_table" in reject_signals: return False, "symbolic_pseudo_table"
     if "no_row_labels" in reject_signals: return False, "no_row_labels"
     
     rows = norm_table.get("rows", [])
@@ -395,7 +426,8 @@ def normalize_table_candidate(
         "ocr_fill_cells": 0,
         "ocr_only_cells": 0,
         "ocr_dependency_score": 0.0,
-        "quality": {}
+        "quality": {},
+        "markdown": ""
     }
     
     if not candidate_data:
@@ -428,6 +460,7 @@ def normalize_table_candidate(
                     r = _rechunk_dense_numeric_cells(r, expected_cols)
                 rows.append(r)
 
+    rows = _normalize_rows(rows)
     if not rows:
         return obj
 
@@ -442,21 +475,17 @@ def normalize_table_candidate(
         diff = shape_cols - len(r)
         padded_rows.append(r + [""] * diff)
         
+    header_idx = _infer_header_row_index(padded_rows)
+    if header_idx > 0:
+        padded_rows = [padded_rows[header_idx]] + padded_rows[:header_idx] + padded_rows[header_idx + 1:]
+
     obj["rows"] = padded_rows
-    
-    if len(padded_rows) > 0:
+    if padded_rows:
         obj["headers"] = padded_rows[0]
         obj["header_rows"] = [0]
-        
-    # Detect numeric columns (scan first few rows)
-    num_cols = set()
-    scan_limit = min(5, len(padded_rows))
-    for i in range(1, scan_limit):
-        for col_idx, cell in enumerate(padded_rows[i]):
-            if any(char.isdigit() for char in cell):
-                num_cols.add(col_idx)
-    
-    obj["numeric_col_indices"] = list(num_cols)
+
+    obj["numeric_col_indices"] = _infer_numeric_columns(padded_rows)
+    obj["markdown"] = _table_to_markdown(obj["headers"], padded_rows[1:])
     
     return obj
 
@@ -475,10 +504,15 @@ def score_table_quality(norm_table: Dict[str, Any]) -> float:
             "numeric_alignment_score": 0.0,
             "duplication_score": 0.0,
             "shape_plausibility_score": 0.0,
+            "row_length_stability": 0.0,
+            "header_likelihood": 0.0,
+            "long_text_row_ratio": 1.0,
+            "source_bias": 0.0,
             "overall_table_quality": 0.0
         }
         return 0.0
 
+    reject_list = []
     total_cells = len(rows) * norm_table["shape"]["cols"]
     empty_cells = sum(1 for r in rows for c in r if not c.strip())
     empty_ratio = empty_cells / max(1, total_cells)
@@ -486,6 +520,7 @@ def score_table_quality(norm_table: Dict[str, Any]) -> float:
     # Header completeness
     headers = norm_table["headers"]
     header_comps = sum(1 for h in headers if h.strip()) / max(1, len(headers))
+    header_likelihood = _header_likelihood(headers, rows[1:])
     
     unique_cells = set(c.strip() for r in rows for c in r if c.strip())
     filled_cells = total_cells - empty_cells
@@ -498,8 +533,12 @@ def score_table_quality(norm_table: Dict[str, Any]) -> float:
     # Check giant dump / collapsed / mixed narrative
     is_giant_dump = False
     is_mixed_narrative = False
-    has_single_cell_rows = False
-    mixed_narrative_count = 0
+    row_stability = _row_length_stability(rows)
+    long_text_ratio = _long_text_row_ratio(rows)
+    num_score = _numeric_consistency(rows, norm_table.get("numeric_col_indices", []), c_count)
+    source_bias = _source_quality_bias(norm_table.get("source", ""))
+    symbolic_ratio = _symbolic_cell_ratio(rows)
+    compact_single_col_ok = _is_compact_single_column_table(rows, header_likelihood, num_score, long_text_ratio, symbolic_ratio)
     
     raw_text = "\n".join(" ".join(str(c) for c in r) for r in rows)
     if _is_dashboard_mixed_table(norm_table, raw_text):
@@ -521,34 +560,48 @@ def score_table_quality(norm_table: Dict[str, Any]) -> float:
 
     shape_score = 1.0
     if c_count < 2 or r_count < 2:
-        shape_score = 0.2
+        shape_score = 0.05
+    if compact_single_col_ok:
+        shape_score = max(shape_score, 0.55)
     if r_count > 50:
         shape_score = 0.5
         
-    reject_list = []
     if is_giant_dump or is_collapsed_row or is_mixed_narrative:
         shape_score = 0.1
         if is_giant_dump: reject_list.append("giant_dump_table")
         if is_collapsed_row: reject_list.append("collapsed_row_table")
         if is_mixed_narrative: reject_list.append("mixed_narrative_table")
+    if c_count < 2 and not compact_single_col_ok:
+        reject_list.append("single_column_pseudo_table")
+    if long_text_ratio > 0.5:
+        reject_list.append("long_text_dump_table")
+    if row_stability < 0.28:
+        reject_list.append("unstable_row_shape")
+    if empty_ratio > 0.78:
+        reject_list.append("mostly_empty_cells")
+    if symbolic_ratio > 0.55:
+        reject_list.append("symbolic_pseudo_table")
         
     if _is_sparse_fragment_table(rows, norm_table.get("headers", [])):
         reject_list.append("non_rectangular_sparse_table")
         
     norm_table["reject_signals"] = reject_list
-        
-    num_score = len(norm_table["numeric_col_indices"]) / max(1, c_count)
 
     # OCR dependency penalty
     ocr_dep = norm_table.get("ocr_dependency_score", 0.0)
 
     overall = (
         (1.0 - empty_ratio) * 2.0 +
-        (header_comps) * 1.5 +
-        (num_score) * 1.0 +
+        (header_comps) * 1.0 +
+        (header_likelihood) * 1.2 +
+        (num_score) * 1.4 +
         (shape_score) * 2.0 -
+        (long_text_ratio) * 2.0 -
+        (symbolic_ratio) * 2.2 -
         (dup_score) * 1.0 -
-        (ocr_dep) * 1.5
+        (ocr_dep) * 1.5 +
+        (row_stability) * 1.4 +
+        (source_bias) * 0.4
     )
 
     norm_table["quality"] = {
@@ -557,6 +610,13 @@ def score_table_quality(norm_table: Dict[str, Any]) -> float:
         "numeric_alignment_score": num_score,
         "duplication_score": dup_score,
         "shape_plausibility_score": shape_score,
+        "row_length_stability": row_stability,
+        "header_likelihood": header_likelihood,
+        "long_text_row_ratio": long_text_ratio,
+        "symbolic_cell_ratio": symbolic_ratio,
+        "compact_single_column_rescued": compact_single_col_ok,
+        "source_bias": source_bias,
+        "reject_signals": list(reject_list),
         "overall_table_quality": overall
     }
     
@@ -571,6 +631,197 @@ def choose_best_table_candidate(candidates: List[Dict[str, Any]]) -> Dict[str, A
         
     for c in candidates:
         score_table_quality(c)
-        
-    candidates.sort(key=lambda x: x["quality"]["overall_table_quality"], reverse=True)
-    return candidates[0]
+
+    candidates.sort(
+        key=lambda x: (
+            x["quality"]["overall_table_quality"],
+            x["quality"].get("header_likelihood", 0.0),
+            x["quality"].get("row_length_stability", 0.0),
+            -x["quality"].get("empty_cell_ratio", 1.0),
+            _source_quality_bias(x.get("source", "")),
+            x.get("shape", {}).get("rows", 0) * x.get("shape", {}).get("cols", 0),
+        ),
+        reverse=True,
+    )
+    best = candidates[0]
+    best["quality"]["selection_reason"] = (
+        f"best_quality={best['quality']['overall_table_quality']:.2f}, "
+        f"header_likelihood={best['quality'].get('header_likelihood', 0.0):.2f}, "
+        f"row_stability={best['quality'].get('row_length_stability', 0.0):.2f}, "
+        f"source={best.get('source', 'unknown')}"
+    )
+    return best
+
+
+def _clean_cell(value: Any) -> str:
+    text = "" if value is None else str(value)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _normalize_rows(rows: Any) -> List[List[str]]:
+    normalized: List[List[str]] = []
+    if not isinstance(rows, list):
+        return normalized
+    for row in rows:
+        if isinstance(row, (list, tuple)):
+            cells = [_clean_cell(cell) for cell in row]
+        else:
+            cells = [_clean_cell(row)]
+        if any(cell for cell in cells):
+            normalized.append(cells)
+    return normalized
+
+
+def _infer_header_row_index(rows: List[List[str]]) -> int:
+    if not rows:
+        return 0
+    candidate_limit = min(2, len(rows) - 1)
+    best_idx = 0
+    best_score = -1.0
+    for idx in range(candidate_limit + 1):
+        header = rows[idx]
+        data_rows = rows[idx + 1: idx + 4]
+        score = _header_likelihood(header, data_rows)
+        if score > best_score:
+            best_idx = idx
+            best_score = score
+    return best_idx
+
+
+def _infer_numeric_columns(rows: List[List[str]]) -> List[int]:
+    if not rows:
+        return []
+    numeric_cols = set()
+    scan_rows = rows[1: min(6, len(rows))]
+    for col_idx in range(len(rows[0])):
+        filled = [row[col_idx] for row in scan_rows if col_idx < len(row) and row[col_idx].strip()]
+        if not filled:
+            continue
+        numeric_like = sum(1 for cell in filled if re.search(r"\d", cell))
+        if numeric_like / len(filled) >= 0.6:
+            numeric_cols.add(col_idx)
+    return sorted(numeric_cols)
+
+
+def _row_length_stability(rows: List[List[str]]) -> float:
+    filled_counts = [sum(1 for cell in row if cell.strip()) for row in rows if any(cell.strip() for cell in row)]
+    if not filled_counts:
+        return 0.0
+    mode_count = Counter(filled_counts).most_common(1)[0][0]
+    stable_rows = sum(1 for count in filled_counts if abs(count - mode_count) <= 1)
+    return stable_rows / len(filled_counts)
+
+
+def _header_likelihood(header: List[str], data_rows: List[List[str]]) -> float:
+    if not header:
+        return 0.0
+    filled = [cell for cell in header if str(cell).strip()]
+    if not filled:
+        return 0.0
+    alpha_ratio = sum(1 for cell in filled if re.search(r"[A-Za-z가-힣]", str(cell))) / len(filled)
+    short_ratio = sum(1 for cell in filled if len(str(cell)) <= 25) / len(filled)
+    digit_ratio = sum(1 for cell in filled if re.search(r"\d", str(cell))) / len(filled)
+    data_digit_ratio = 0.0
+    data_cells = [cell for row in data_rows for cell in row if str(cell).strip()]
+    if data_cells:
+        data_digit_ratio = sum(1 for cell in data_cells if re.search(r"\d", str(cell))) / len(data_cells)
+    return max(0.0, min(1.0, 0.45 * alpha_ratio + 0.30 * short_ratio + 0.25 * max(0.0, data_digit_ratio - digit_ratio + 0.2)))
+
+
+def _numeric_consistency(rows: List[List[str]], numeric_cols: List[int], c_count: int) -> float:
+    if c_count <= 0 or len(rows) <= 1:
+        return 0.0
+    if not numeric_cols:
+        return 0.15 if c_count >= 2 else 0.0
+    col_scores = []
+    for col_idx in numeric_cols:
+        cells = [row[col_idx] for row in rows[1:] if col_idx < len(row) and row[col_idx].strip()]
+        if not cells:
+            continue
+        numeric_like = sum(1 for cell in cells if re.search(r"\d", cell))
+        col_scores.append(numeric_like / len(cells))
+    return sum(col_scores) / len(col_scores) if col_scores else 0.0
+
+
+def _long_text_row_ratio(rows: List[List[str]]) -> float:
+    if not rows:
+        return 1.0
+    long_rows = 0
+    for row in rows:
+        filled = [cell for cell in row if str(cell).strip()]
+        joined = " ".join(filled)
+        if len(filled) <= 1 and len(joined) > 90:
+            long_rows += 1
+        elif len(joined) / max(1, len(filled)) > 70:
+            long_rows += 1
+    return long_rows / len(rows)
+
+
+def _source_quality_bias(source: str) -> float:
+    source = str(source or "").lower()
+    if "camelot" in source:
+        return 1.0
+    if "pdfplumber" in source:
+        return 0.9
+    if "ocr" in source:
+        return 0.3
+    return 0.5
+
+
+def _symbolic_cell_ratio(rows: List[List[str]]) -> float:
+    cells = [str(cell).strip() for row in rows for cell in row if str(cell).strip()]
+    if not cells:
+        return 1.0
+    symbolic = 0
+    for cell in cells:
+        alnum = re.findall(r"[A-Za-z가-힣0-9]", cell)
+        symbol = re.findall(r"[▪•□◦\-\(\)▲△▼▽■◆]+", cell)
+        if symbol and len(alnum) <= 1:
+            symbolic += 1
+    return symbolic / len(cells)
+
+
+def _is_compact_single_column_table(
+    rows: List[List[str]],
+    header_likelihood: float,
+    num_score: float,
+    long_text_ratio: float,
+    symbolic_ratio: float,
+) -> bool:
+    if not rows:
+        return False
+    r_count = len(rows)
+    c_count = max((len(r) for r in rows), default=0)
+    if c_count != 1 or r_count < 2:
+        return False
+
+    body_cells = [str(r[0]).strip() for r in rows[1:] if r and str(r[0]).strip()]
+    if not body_cells:
+        return False
+
+    numeric_body_ratio = sum(1 for cell in body_cells if re.search(r"\d", cell)) / len(body_cells)
+    header_text = str(rows[0][0]).strip() if rows and rows[0] else ""
+    unit_hint = bool(re.search(r"[\(%조억원백만원bpptxUSD원\)]", " ".join(body_cells[:2]) + " " + header_text, re.I))
+
+    return (
+        header_likelihood >= 0.72
+        and long_text_ratio < 0.45
+        and symbolic_ratio < 0.35
+        and (num_score >= 0.15 or numeric_body_ratio >= 0.7)
+        and unit_hint
+    )
+
+
+def _table_to_markdown(headers: List[str], rows: List[List[str]]) -> str:
+    if not headers:
+        return ""
+    header_row = [str(cell).strip() or "-" for cell in headers]
+    lines = [
+        "| " + " | ".join(header_row) + " |",
+        "| " + " | ".join("---" for _ in header_row) + " |",
+    ]
+    for row in rows:
+        padded = list(row) + [""] * max(0, len(header_row) - len(row))
+        lines.append("| " + " | ".join((str(cell).strip() or " ") for cell in padded[:len(header_row)]) + " |")
+    return "\n".join(lines)

@@ -653,7 +653,7 @@
       if (el) {
         el.style.backgroundColor = 'rgba(59, 130, 246, 0.4)';
         el.style.zIndex = '20';
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        el.style.boxShadow = '0 0 0 2px rgba(96, 165, 250, 0.9)';
       }
     }
     window.resetOverlay = function (id) {
@@ -661,18 +661,22 @@
       if (el) {
         el.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
         el.style.zIndex = '1';
+        el.style.boxShadow = '';
       }
     }
     window.highlightList = function (id) {
       const el = document.getElementById('list-item-' + id);
       if (el) {
         el.style.backgroundColor = '#374151';
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        el.style.outline = '1px solid rgba(96, 165, 250, 0.6)';
       }
     }
     window.resetList = function (id) {
       const el = document.getElementById('list-item-' + id);
-      if (el) el.style.backgroundColor = '';
+      if (el) {
+        el.style.backgroundColor = '';
+        el.style.outline = '';
+      }
     }
     window.focusOverlay = function (id) {
       highlightOverlay(id);
