@@ -5,6 +5,11 @@ parsed_results/
 .venv/
 env/
 .env
+.env.*
+!.env.example
+*.log
+*.log.*
+logs/
 
 # generated outputs
 *_llm_ready.json

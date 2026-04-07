@@ -27,6 +27,9 @@ def process_dashboard_brief(doc, page_idx, plumber_tables):
     )
     visual_blocks, visual_dropped = _extract_visual_blocks(raw, page_idx, pw, ph)
     regions, region_seed_count = _segment_dashboard_regions(line_candidates, table_blocks, pw, ph)
+    region_assignment_debug = _assign_dashboard_region_ids(line_candidates, regions, pw, ph)
+    table_context_debug = _enrich_table_blocks_with_context(table_blocks, line_candidates, pw, ph)
+    visual_context_debug = _enrich_visual_blocks_with_context(visual_blocks, line_candidates, table_blocks, pw, ph)
     region_blocks, absorbed_count, region_debug = _build_dashboard_region_blocks(
         line_candidates,
         regions,
@@ -37,6 +40,10 @@ def process_dashboard_brief(doc, page_idx, plumber_tables):
         ph,
     )
     region_debug["dashboard_region_seed_count"] = region_seed_count
+    region_debug.update(getattr(_segment_dashboard_regions, "_last_stats", {}))
+    region_debug.update(region_assignment_debug)
+    region_debug.update(table_context_debug)
+    region_debug.update(visual_context_debug)
 
     blocks = table_blocks + _sort_dashboard_final_blocks(region_blocks) + visual_blocks
     dashboard_roles = sorted({
@@ -152,12 +159,25 @@ def _extract_visual_blocks(raw: dict, page_idx: int, pw: float, ph: float) -> tu
 def _build_table_blocks(plumber_tables, page_idx: int, pw: float, ph: float) -> list[dict]:
     tables: list[dict] = []
     for i, tbl in enumerate(plumber_tables):
-        cells = tbl.get("cells") or []
+        cells = _normalize_table_cells(tbl.get("cells") or [])
         flattened = [
             " | ".join(str(cell).strip() for cell in row if cell is not None and str(cell).strip())
             for row in cells
         ]
         text = "\n".join(row for row in flattened if row).strip() or "[Table Data]"
+        table_summary, summary_kind, key_value_rows = _summarize_table_cells(cells)
+        table_markdown = _table_markdown_from_cells(cells)
+        row_count = len(cells)
+        col_count = max((len(row) for row in cells), default=0)
+        normalized_table = {
+            "title": _first_nonempty_table_row(cells),
+            "headers": _infer_table_headers(cells),
+            "rows": cells,
+            "header_rows": [0] if cells else [],
+            "shape": {"rows": row_count, "cols": col_count},
+            "source": "pdfplumber_dashboard",
+            "markdown": table_markdown,
+        }
         tables.append({
             "id": f"p{page_idx+1}_t{i}",
             "type": "table",
@@ -167,7 +187,12 @@ def _build_table_blocks(plumber_tables, page_idx: int, pw: float, ph: float) -> 
             "confidence": 1.0,
             "meta": {
                 "dashboard_role": "mini_table",
-                "normalized_table": cells,
+                "normalized_table": normalized_table,
+                "table_summary": table_summary,
+                "table_markdown": table_markdown,
+                "key_value_rows": key_value_rows,
+                "dashboard_table_summary_kind": summary_kind,
+                "dashboard_table_shape": {"rows": row_count, "cols": col_count},
                 "summary_priority": "high",
             },
         })
@@ -175,6 +200,156 @@ def _build_table_blocks(plumber_tables, page_idx: int, pw: float, ph: float) -> 
 
 
 # ── required structural helpers (chunking / RAG oriented) ─────────────
+
+def _clean_table_cell(cell: Any) -> str:
+    if cell is None:
+        return ""
+    return re.sub(r"\s+", " ", str(cell)).strip()
+
+
+def _normalize_table_cells(cells: list[Any]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    max_cols = 0
+    for row in cells or []:
+        if isinstance(row, (list, tuple)):
+            cleaned = [_clean_table_cell(cell) for cell in row]
+        else:
+            cleaned = [_clean_table_cell(row)]
+        while cleaned and not cleaned[-1]:
+            cleaned.pop()
+        if not cleaned:
+            continue
+        rows.append(cleaned)
+        max_cols = max(max_cols, len(cleaned))
+    if max_cols <= 0:
+        return rows
+    return [row + [""] * (max_cols - len(row)) for row in rows]
+
+
+def _first_nonempty_table_row(cells: list[list[str]]) -> str:
+    for row in cells:
+        joined = " | ".join(cell for cell in row if cell).strip()
+        if joined:
+            return joined
+    return ""
+
+
+def _infer_table_headers(cells: list[list[str]]) -> list[str]:
+    for row in cells[:3]:
+        nonempty = [cell for cell in row if cell]
+        if len(nonempty) >= 2:
+            return nonempty
+    return [cell for cell in cells[0] if cell] if cells else []
+
+
+def _table_markdown_from_cells(cells: list[list[str]], max_rows: int = 18, max_cols: int = 10) -> str:
+    if not cells:
+        return ""
+    width = min(max((len(row) for row in cells), default=0), max_cols)
+    if width <= 0:
+        return ""
+
+    def _row(values: list[str]) -> str:
+        clipped = [(values[i] if i < len(values) else "").replace("|", "/") for i in range(width)]
+        return "| " + " | ".join(clipped) + " |"
+
+    rows = [_row(cells[0])]
+    rows.append("| " + " | ".join("---" for _ in range(width)) + " |")
+    for row in cells[1:max_rows]:
+        rows.append(_row(row))
+    if len(cells) > max_rows:
+        rows.append("| " + " | ".join("..." if i == 0 else "" for i in range(width)) + " |")
+    return "\n".join(rows)
+
+
+def _summarize_table_cells(cells: list[list[str]], max_rows: int = 12) -> tuple[str, str, list[dict[str, str]]]:
+    if not cells:
+        return "Mini-table: no structured cells extracted.", "empty", []
+
+    row_count = len(cells)
+    col_count = max((len(row) for row in cells), default=0)
+    title = _first_nonempty_table_row(cells)
+    headers = _infer_table_headers(cells)
+    key_value_rows: list[dict[str, str]] = []
+    body_start = 1 if headers and cells and headers == [cell for cell in cells[0] if cell] else 0
+
+    for row in cells[body_start : body_start + max_rows]:
+        nonempty = [cell for cell in row if cell]
+        if len(nonempty) < 2:
+            continue
+        key = nonempty[0]
+        value = " | ".join(nonempty[1:])
+        if key and value:
+            key_value_rows.append({"key": key, "value": value})
+
+    lines = [f"Mini-table ({row_count} rows x {col_count} cols)"]
+    if title:
+        lines.append(f"Title/first row: {title}")
+    if headers:
+        lines.append("Columns: " + " | ".join(headers[: min(len(headers), 10)]))
+    if key_value_rows:
+        for item in key_value_rows[:max_rows]:
+            lines.append(f"- {item['key']}: {item['value']}")
+        return "\n".join(lines), "key_value", key_value_rows
+
+    for row in cells[:max_rows]:
+        joined = " | ".join(cell for cell in row if cell)
+        if joined:
+            lines.append(f"- {joined}")
+    return "\n".join(lines), "row_excerpt", key_value_rows
+
+
+def _looks_short_metric_value(text: str, width: float = 0.0, font_size: float = 0.0) -> bool:
+    t = (text or "").strip()
+    if not t or len(t) > 32:
+        return False
+    if not re.search(r"\d", t):
+        return False
+    metric_signal = bool(re.search(r"[%+\-]|bp|bps|x\b", t, re.I))
+    if not metric_signal:
+        return False
+    return width >= 12.0 or font_size >= 8.0 or len(t) >= 4
+
+
+def _looks_bracketed_topic_start(text: str) -> bool:
+    t = (text or "").strip()
+    if not t:
+        return False
+    return bool(re.match(r"^\[[^\]\n]{1,24}\]\s*\S", t))
+
+
+def _looks_structural_issue_box(text: str) -> bool:
+    t = (text or "").strip()
+    if _looks_bracketed_topic_start(t):
+        return True
+    if len(t) <= 80 and re.match(r"^[A-Za-z][A-Za-z0-9 /\-&]{1,40}:$", t):
+        return True
+    return False
+
+
+def _looks_structural_ranking(text: str) -> bool:
+    t = (text or "").strip()
+    if not t:
+        return False
+    if re.match(r"^\d{1,2}[\.)]\s+\S", t):
+        return True
+    if re.match(r"^[\-*]\s+\S", t):
+        return True
+    return False
+
+
+def _looks_structural_mini_table(text: str, width: float, page_width: float) -> bool:
+    t = (text or "").strip()
+    if not t:
+        return False
+    if t.count("|") >= 1 and width > page_width * 0.12:
+        return True
+    if len(re.findall(r"\b\d{1,2}[QH]\d{2,4}[A-Z]?\b", t, re.I)) >= 2:
+        return True
+    if len(re.findall(r"\b(?:1D|1W|1M|3M|6M|12M)\b", t, re.I)) >= 2:
+        return True
+    return False
+
 
 def _alpha_ratio(text: str) -> float:
     t = (text or "").strip()
@@ -503,6 +678,185 @@ def _line_table_overlap_max(line: dict, table_blocks: list[dict]) -> float:
     return best
 
 
+def _assign_dashboard_region_ids(
+    lines: list[dict],
+    regions: list[list[float]],
+    pw: float,
+    ph: float,
+) -> dict[str, Any]:
+    assigned = 0
+    for ln in lines:
+        meta = ln.setdefault("meta", {})
+        best_idx = None
+        best_score = 0.0
+        for idx, region in enumerate(regions):
+            inflated = _inflate_bbox(region, pw * 0.012, ph * 0.008)
+            overlap = _bbox_overlap_ratio(ln["bbox"], inflated)
+            bb = ln["bbox"]
+            cx = (bb[0] + bb[2]) / 2.0
+            cy = (bb[1] + bb[3]) / 2.0
+            inside = inflated[0] <= cx <= inflated[2] and inflated[1] <= cy <= inflated[3]
+            score = overlap + (0.25 if inside else 0.0)
+            if score > best_score:
+                best_idx = idx
+                best_score = score
+        if best_idx is not None and best_score >= 0.20:
+            meta["dashboard_region_id"] = f"r{best_idx}"
+            meta["dashboard_region_overlap_score"] = round(best_score, 4)
+            assigned += 1
+    return {
+        "dashboard_region_assignment_count": assigned,
+        "dashboard_region_unassigned_line_count": max(0, len(lines) - assigned),
+    }
+
+
+def _line_context_text_ok(ln: dict) -> bool:
+    meta = ln.get("meta", {})
+    rr = meta.get("dashboard_role_refined")
+    if rr in ("ignore_noise", "footer", "contact_info_like"):
+        return False
+    text = (ln.get("text") or "").strip()
+    if not text:
+        return False
+    if len(text) <= 3 and _numeric_ratio(text) >= 0.34:
+        return False
+    if _numeric_ratio(text) >= 0.62 and _alpha_ratio(text) < 0.18:
+        return False
+    return True
+
+
+def _unique_line_texts(lines: list[dict], limit: int = 12) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for ln in sorted(lines, key=lambda item: (item["bbox"][1], item["bbox"][0])):
+        text = re.sub(r"\s+", " ", (ln.get("text") or "").strip())
+        key = text.lower()
+        if not text or key in seen:
+            continue
+        seen.add(key)
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _extract_metric_tokens(texts: list[str], limit: int = 12) -> list[str]:
+    seen: set[str] = set()
+    metrics: list[str] = []
+    for text in texts:
+        for token in re.findall(r"[+\-]?\d[\d,]*(?:\.\d+)?%?|[+\-]?\d+(?:\.\d+)?x", text):
+            norm = token.strip()
+            if not norm or norm in seen:
+                continue
+            seen.add(norm)
+            metrics.append(norm)
+            if len(metrics) >= limit:
+                return metrics
+    return metrics
+
+
+def _enrich_table_blocks_with_context(
+    table_blocks: list[dict],
+    lines: list[dict],
+    pw: float,
+    ph: float,
+) -> dict[str, Any]:
+    enriched = 0
+    context_line_total = 0
+    for table in table_blocks:
+        tb = list(table.get("bbox", [0, 0, 0, 0]))
+        if len(tb) < 4:
+            continue
+        expanded = _inflate_bbox(tb, pw * 0.025, ph * 0.018)
+        context_lines: list[dict] = []
+        for ln in lines:
+            if not _line_context_text_ok(ln):
+                continue
+            bb = ln["bbox"]
+            cx = (bb[0] + bb[2]) / 2.0
+            cy = (bb[1] + bb[3]) / 2.0
+            overlaps = _bbox_overlap_ratio(bb, expanded) >= 0.18
+            center_inside = expanded[0] <= cx <= expanded[2] and expanded[1] <= cy <= expanded[3]
+            near_caption = (
+                tb[0] - pw * 0.02 <= bb[0] <= tb[2] + pw * 0.02
+                and abs(bb[3] - tb[1]) <= ph * 0.035
+            )
+            if overlaps or center_inside or near_caption:
+                context_lines.append(ln)
+
+        context_texts = _unique_line_texts(context_lines, limit=10)
+        if not context_texts:
+            continue
+        meta = table.setdefault("meta", {})
+        context = " / ".join(context_texts)
+        existing = str(meta.get("table_summary") or "").strip()
+        if context and context not in existing:
+            meta["table_summary"] = f"Context: {context}\n{existing}".strip() if existing else f"Context: {context}"
+        meta["caption_text"] = context
+        meta["dashboard_table_context_text"] = context
+        meta["dashboard_table_context_line_ids"] = [ln["id"] for ln in context_lines[:24]]
+        meta["dashboard_table_context_line_count"] = len(context_lines)
+        meta["summary_priority"] = "high"
+        enriched += 1
+        context_line_total += len(context_lines)
+    return {
+        "dashboard_table_context_enriched_count": enriched,
+        "dashboard_table_context_line_count": context_line_total,
+    }
+
+
+def _enrich_visual_blocks_with_context(
+    visual_blocks: list[dict],
+    lines: list[dict],
+    table_blocks: list[dict],
+    pw: float,
+    ph: float,
+) -> dict[str, Any]:
+    enriched = 0
+    context_line_total = 0
+    for visual in visual_blocks:
+        vb = list(visual.get("bbox", [0, 0, 0, 0]))
+        if len(vb) < 4:
+            continue
+        expanded = _inflate_bbox(vb, pw * 0.055, ph * 0.035)
+        context_lines: list[dict] = []
+        for ln in lines:
+            if not _line_context_text_ok(ln):
+                continue
+            if _line_table_overlap_max(ln, table_blocks) >= 0.70:
+                continue
+            bb = ln["bbox"]
+            cx = (bb[0] + bb[2]) / 2.0
+            cy = (bb[1] + bb[3]) / 2.0
+            h_gap, v_gap = _bbox_gap(bb, vb)
+            center_inside = expanded[0] <= cx <= expanded[2] and expanded[1] <= cy <= expanded[3]
+            near_edge = h_gap <= pw * 0.045 and v_gap <= ph * 0.030
+            if center_inside or near_edge:
+                context_lines.append(ln)
+
+        context_texts = _unique_line_texts(context_lines, limit=12)
+        if not context_texts:
+            continue
+        metrics = _extract_metric_tokens(context_texts)
+        parts = ["Context: " + " / ".join(context_texts)]
+        if metrics:
+            parts.append("Visible metrics: " + ", ".join(metrics))
+        summary = "\n".join(parts)
+        meta = visual.setdefault("meta", {})
+        meta["visual_summary"] = summary
+        meta["caption_text"] = summary
+        meta["context_block_ids"] = [ln["id"] for ln in context_lines[:24]]
+        meta["visible_key_metrics"] = metrics
+        meta["summary_priority"] = "medium"
+        meta["dashboard_visual_context_line_count"] = len(context_lines)
+        enriched += 1
+        context_line_total += len(context_lines)
+    return {
+        "dashboard_visual_context_enriched_count": enriched,
+        "dashboard_visual_context_line_count": context_line_total,
+    }
+
+
 def _has_prose_punctuation_hint(text: str) -> bool:
     """Structural sentence/continuation marks — not document-specific phrases."""
     t = text or ""
@@ -556,12 +910,25 @@ def _assign_left_column_section_roles(candidates: list[dict], pw: float, ph: flo
         first = cl[0]
         t = (first.get("text") or "").strip()
         fh = first["bbox"][3] - first["bbox"][1]
-        if len(t) > 58:
+        # Stricter: only genuinely short, independent lines qualify as headers
+        if len(t) > 35:
             continue
-        if fh > ph * 0.030:
+        if fh > ph * 0.022:
             continue
         if _alpha_ratio(t) < 0.22:
             continue
+        # Long prose start guard: if first line is very close to next line,
+        # it's a paragraph start, not a standalone header
+        if len(cl) >= 2:
+            gap_to_body = cl[1]["bbox"][1] - first["bbox"][3]
+            if gap_to_body < ph * 0.008:
+                continue
+            # First line should be meaningfully shorter than body lines
+            body_lens = [len((x.get("text") or "").strip()) for x in cl[1:]]
+            if body_lens:
+                avg_body = sum(body_lens) / len(body_lens)
+                if avg_body > 0 and len(t) >= 0.6 * avg_body:
+                    continue
         first.setdefault("meta", {})["dashboard_role_refined"] = "section_header_like"
         for rest in cl[1:]:
             rest.setdefault("meta", {})["dashboard_role_refined"] = "section_body_like"
@@ -649,27 +1016,59 @@ def _enrich_dashboard_line_meta(
         nr = _numeric_ratio(t)
         sr = _symbol_ratio(t)
         coarse = meta.get("dashboard_role", "card_text")
+        font_size = float(meta.get("font_size", 0.0) or 0.0)
         bk_key = int(ln["bbox"][0] / bucket_w)
         cid = id(ln)
+
+        # --- Left prose rescue guard (structural, no string matching) ---
+        # Wide prose: typical narrative lines
+        # Narrow alpha-heavy: shorter lines that are still meaningful prose (events, etc.)
+        _is_left_prose = (
+            col == "left"
+            and band in ("top", "middle")
+            and len(t) >= 15
+            and (
+                (ar >= 0.28 and wr >= 0.12)
+                or (ar >= 0.45 and len(t) >= 18)
+            )
+        )
+        _is_bottom_content_like = (
+            y0 < ph * 0.94
+            and ar >= 0.45
+            and len(t) >= 16
+            and wr >= 0.25
+        )
 
         refined = "card_header_like"
         if _looks_contact_info(t):
             refined = "contact_info_like"
-        elif coarse == "footer" or (y1 > ph * 0.9 and len(t) <= 42):
+        elif (coarse == "footer" or (y1 > ph * 0.9 and len(t) <= 42)) and not _is_bottom_content_like:
+            refined = "footer"
+        # --- Bottom dense long prose → footer (compliance/disclaimer) ---
+        elif y0 > ph * 0.84 and wr >= 0.62 and font_size <= 8.0 and ar >= 0.45 and len(t) >= 40 and nr <= 0.16:
             refined = "footer"
         elif coarse == "title":
             refined = "card_header_like"
-        elif _looks_axis_tick(t) and len(t) <= 36:
+        elif _looks_axis_tick(t) and len(t) <= 36 and not _is_left_prose:
             refined = "ignore_noise"
-        elif _looks_unit_label(t):
+        elif _looks_unit_label(t) and not _is_left_prose:
             refined = "ignore_noise"
-        elif len(t) <= 24 and nr + sr >= 0.75:
+        elif len(t) <= 24 and nr + sr >= 0.75 and not _looks_short_metric_value(t, wr * pw, font_size):
             refined = "ignore_noise"
+        elif coarse == "issue_box":
+            refined = "narrative_text" if col == "left" else "card_header_like"
+        elif coarse == "ranking":
+            refined = "narrative_text" if col == "left" and band in ("top", "middle") and ar >= 0.25 else "list_item_like"
+        elif coarse == "mini_table":
+            refined = "table_header_like"
         elif (
             (band == "bottom" or tb_ov >= 0.12)
             and 0.20 <= wr <= 0.55
             and len(t.split()) >= 3
             and sum(1 for w in re.split(r"\s+", t) if len(w) <= 3) >= 3
+            and not (ar >= 0.42 and len(t) >= 36 and nr <= 0.32)
+            and not (ar >= 0.30 and len(t) >= 32 and t.count("|") == 0 and sr <= 0.24)
+            and not (ar >= 0.28 and len(t) >= 32 and t.count("|") == 0 and "/" not in t)
             and not (wr >= 0.42 and cx <= 0.42 * pw and ar >= 0.5 and nr <= 0.35)
             and not (
                 col == "left"
@@ -679,12 +1078,10 @@ def _enrich_dashboard_line_meta(
             )
         ):
             refined = "table_header_like"
-        elif _chart_label_signal_hits(ln, sov, pw) >= 2:
+        elif _chart_label_signal_hits(ln, sov, pw) >= 2 and not _is_left_prose:
             refined = "chart_label_like"
-        elif coarse == "kpi":
+        elif coarse == "kpi" and not _is_left_prose:
             refined = "chart_label_like"
-        elif coarse == "mini_table":
-            refined = "table_header_like"
         elif (
             col == "left"
             and band in ("top", "middle")
@@ -719,12 +1116,14 @@ def _enrich_dashboard_line_meta(
             and short_nbr.get(cid, 0) >= 3
         ):
             refined = "card_header_like"
-        elif coarse == "ranking":
-            refined = "list_item_like"
-        elif coarse == "issue_box":
-            refined = "narrative_text" if col == "left" else "card_header_like"
         elif coarse == "card_text":
-            if col == "right" and (wr <= 0.32 or _chart_label_signal_hits(ln, sov, pw) >= 1):
+            if _looks_structural_issue_box(t):
+                refined = "narrative_text" if col == "left" else "card_header_like"
+            elif (
+                col == "right"
+                and not (ar >= 0.35 and len(t) >= 32 and nr <= 0.35)
+                and (wr <= 0.32 or _chart_label_signal_hits(ln, sov, pw) >= 1)
+            ):
                 refined = "chart_label_like"
             elif col == "left" and band in ("top", "middle"):
                 refined = "narrative_text"
@@ -732,6 +1131,12 @@ def _enrich_dashboard_line_meta(
                 refined = "card_header_like"
 
         meta["dashboard_role_refined"] = refined
+        if refined == "footer":
+            ln["type"] = "footer"
+        elif ln.get("type") == "footer":
+            ln["type"] = "text"
+            if meta.get("dashboard_role") == "footer":
+                meta["dashboard_role"] = "card_text"
 
     _assign_left_column_section_roles(candidates, pw, ph)
 
@@ -769,7 +1174,7 @@ def _reconstruct_narrative_paragraphs(
         return 0
 
     page_idx = _infer_page_idx()
-    narrative_roles = frozenset({"narrative_text"})
+    narrative_roles = frozenset({"narrative_text", "section_body_like"})
 
     pre_cand = [
         ln
@@ -824,6 +1229,8 @@ def _reconstruct_narrative_paragraphs(
         if a.get("meta", {}).get("dashboard_band_id") == "bottom":
             return False
         if b.get("meta", {}).get("dashboard_band_id") == "bottom":
+            return False
+        if _looks_bracketed_topic_start(b.get("text", "")):
             return False
         if _line_max_zone_overlap_frac(ab, hard_zones) >= 0.10:
             return False
@@ -890,6 +1297,11 @@ def _reconstruct_narrative_paragraphs(
             max(x["bbox"][3] for x in g),
         ]
         src_roles = [x.get("meta", {}).get("dashboard_role_refined") for x in g]
+        region_ids = sorted({
+            str(x.get("meta", {}).get("dashboard_region_id"))
+            for x in g
+            if x.get("meta", {}).get("dashboard_region_id")
+        })
         out_bl.append({
             "id": f"p{page_idx + 1}_narr{gi}",
             "type": "text",
@@ -903,6 +1315,7 @@ def _reconstruct_narrative_paragraphs(
                 "dashboard_line_ids": [x["id"] for x in g],
                 "dashboard_refined_in_block": src_roles,
                 "dashboard_source_roles_refined": src_roles,
+                "dashboard_region_ids": region_ids,
                 "summary_priority": "high",
                 "summary_exclude": False,
             },
@@ -930,9 +1343,12 @@ def _dashboard_single_line_block(ln: dict, page_idx: int, sid: str, source: str)
         dr = "ranking"
     elif rfn == "table_header_like":
         dr = "mini_table"
+    line_meta = ln.get("meta", {})
+    block_type = "footer" if rfn in ("ignore_noise", "footer") else "text"
+    priority = "high" if rfn in ("chart_label_like", "list_item_like", "table_header_like") else "medium"
     return {
         "id": f"p{page_idx + 1}_{sid}",
-        "type": "text",
+        "type": block_type,
         "bbox": [round(v, 2) for v in ln["bbox"]],
         "text": ln.get("text", ""),
         "source": source,
@@ -942,7 +1358,10 @@ def _dashboard_single_line_block(ln: dict, page_idx: int, sid: str, source: str)
             "dashboard_role_refined": rfn,
             "dashboard_line_ids": [ln["id"]],
             "dashboard_refined_in_block": [rfn],
-            "summary_priority": "medium",
+            "dashboard_region_id": line_meta.get("dashboard_region_id"),
+            "dashboard_region_overlap_score": line_meta.get("dashboard_region_overlap_score"),
+            "dashboard_table_overlap_frac": line_meta.get("dashboard_table_overlap_frac", 0.0),
+            "summary_priority": "low" if block_type == "footer" else priority,
             "summary_exclude": rfn in ("ignore_noise", "footer"),
         },
     }
@@ -970,6 +1389,8 @@ def _build_atomic_structured_blocks(
     structured_card_count = 0
     atomic_merge_absorbed = 0
     card_line_counts: list[int] = []
+    table_duplicate_card_suppressed = 0
+    table_duplicate_line_suppressed = 0
 
     pool = [
         ln
@@ -985,8 +1406,24 @@ def _build_atomic_structured_blocks(
 
     def _emit_structured_card(clus: list[dict], sid: str, table_dup: bool) -> None:
         nonlocal structured_card_count, atomic_merge_absorbed
+        nonlocal table_duplicate_card_suppressed, table_duplicate_line_suppressed
         refin = [x.get("meta", {}).get("dashboard_role_refined") for x in clus]
+        if table_dup:
+            for x in clus:
+                used.add(x["id"])
+            table_duplicate_card_suppressed += 1
+            table_duplicate_line_suppressed += len(clus)
+            atomic_merge_absorbed += max(0, len(clus) - 1)
+            return
         text = "\n".join(x.get("text", "") for x in clus)
+        prose_lines = sum(
+            1
+            for x in clus
+            if len((x.get("text") or "").strip()) >= 32
+            and _alpha_ratio((x.get("text") or "")) >= 0.32
+            and _numeric_ratio((x.get("text") or "")) <= 0.38
+        )
+        card_role = "card_text" if prose_lines >= max(1, len(clus) // 2) else "kpi"
         bbox = [
             min(x["bbox"][0] for x in clus),
             min(x["bbox"][1] for x in clus),
@@ -1001,12 +1438,17 @@ def _build_atomic_structured_blocks(
             "source": "dashboard_structured_card",
             "confidence": 0.87,
             "meta": {
-                "dashboard_role": "kpi",
+                "dashboard_role": card_role,
                 "dashboard_role_refined": "structured_card",
                 "dashboard_line_ids": [x["id"] for x in clus],
                 "dashboard_refined_in_block": refin,
                 "dashboard_structured_card_atomic_roles": refin,
-                "summary_priority": "low" if table_dup else "medium",
+                "dashboard_region_ids": sorted({
+                    str(x.get("meta", {}).get("dashboard_region_id"))
+                    for x in clus
+                    if x.get("meta", {}).get("dashboard_region_id")
+                }),
+                "summary_priority": "high" if card_role == "card_text" else "medium",
                 "summary_exclude": False,
                 "dashboard_overlaps_table_bbox": table_dup,
             },
@@ -1046,7 +1488,17 @@ def _build_atomic_structured_blocks(
                 break
             clus.append(cur)
             j += 1
-        tbl_dup = any(_line_table_overlap_max(x, table_blocks) >= 0.38 for x in clus)
+        tbl_hits = [
+            x for x in clus
+            if _line_table_overlap_max(x, table_blocks) >= 0.38
+        ]
+        tbl_dup = (
+            len(tbl_hits) >= max(1, (len(clus) + 1) // 2)
+            or any(
+                x.get("meta", {}).get("dashboard_role_refined") == "table_header_like"
+                for x in tbl_hits
+            )
+        )
         _emit_structured_card(clus, f"scard{cg}", tbl_dup)
         yi += len(clus)
         cg += 1
@@ -1056,6 +1508,7 @@ def _build_atomic_structured_blocks(
         for ln in pool
         if ln.get("meta", {}).get("dashboard_role_refined") == "list_item_like"
         and ln["id"] not in used
+        and _line_table_overlap_max(ln, table_blocks) < 0.38
     ]
     list_pool.sort(
         key=lambda ln: (int(ln["bbox"][0] / max(page_width * 0.03, 1.0)), ln["bbox"][1])
@@ -1103,6 +1556,11 @@ def _build_atomic_structured_blocks(
                     "dashboard_role_refined": "list_item_like",
                     "dashboard_line_ids": [x["id"] for x in chunk],
                     "dashboard_refined_in_block": ["list_item_like"] * len(chunk),
+                    "dashboard_region_ids": sorted({
+                        str(x.get("meta", {}).get("dashboard_region_id"))
+                        for x in chunk
+                        if x.get("meta", {}).get("dashboard_region_id")
+                    }),
                     "summary_priority": "high",
                     "summary_exclude": False,
                 },
@@ -1119,6 +1577,7 @@ def _build_atomic_structured_blocks(
         if (
             ln.get("meta", {}).get("dashboard_role_refined") == "chart_label_like"
             and ln.get("meta", {}).get("dashboard_column_id") not in ("right", "center")
+            and _line_table_overlap_max(ln, table_blocks) < 0.38
         ):
             atomic.append(_dashboard_single_line_block(ln, page_idx, f"atom_chl{ch_left}", "dashboard_atomic_chart"))
             used.add(ln["id"])
@@ -1130,6 +1589,10 @@ def _build_atomic_structured_blocks(
         if ln["id"] in used:
             continue
         rr = ln.get("meta", {}).get("dashboard_role_refined")
+        if _line_table_overlap_max(ln, table_blocks) >= 0.38:
+            used.add(ln["id"])
+            table_duplicate_line_suppressed += 1
+            continue
         if rr == "card_header_like":
             atomic.append(
                 _dashboard_single_line_block(ln, page_idx, f"atom_h{hi}", "dashboard_atomic_header")
@@ -1150,6 +1613,8 @@ def _build_atomic_structured_blocks(
     card_stats: dict[str, Any] = {
         "dashboard_structured_card_avg_lines": round(avg_lines, 3),
         "dashboard_structured_card_max_lines": max_lines,
+        "dashboard_table_duplicate_card_suppressed_count": table_duplicate_card_suppressed,
+        "dashboard_table_duplicate_line_suppressed_count": table_duplicate_line_suppressed,
     }
     return atomic, used, structured_card_count, atomic_merge_absorbed, card_stats
 
@@ -1191,6 +1656,7 @@ def _build_left_section_blocks(
                 "dashboard_role_refined": "section_header_like",
                 "dashboard_line_ids": [ln["id"]],
                 "dashboard_refined_in_block": ["section_header_like"],
+                "dashboard_region_id": ln.get("meta", {}).get("dashboard_region_id"),
                 "summary_priority": "high",
                 "summary_exclude": False,
             },
@@ -1228,6 +1694,11 @@ def _build_left_section_blocks(
                     "dashboard_role_refined": "section_body_like",
                     "dashboard_line_ids": [x["id"] for x in body],
                     "dashboard_refined_in_block": ["section_body_like"] * len(body),
+                    "dashboard_region_ids": sorted({
+                        str(x.get("meta", {}).get("dashboard_region_id"))
+                        for x in body
+                        if x.get("meta", {}).get("dashboard_region_id")
+                    }),
                     "summary_priority": "high",
                     "summary_exclude": False,
                 },
@@ -1442,29 +1913,64 @@ def _segment_dashboard_regions(
     pw: float,
     ph: float,
 ) -> tuple[list[list[float]], int]:
+    region_roles = {
+        "narrative_text",
+        "section_body_like",
+        "section_header_like",
+        "card_header_like",
+        "list_item_like",
+        "table_header_like",
+        "chart_label_like",
+    }
     seed_blocks = [
         ln
         for ln in lines
-        if ln.get("meta", {}).get("dashboard_role_refined") == "narrative_text"
-        and ln.get("meta", {}).get("dashboard_column_id") == "left"
+        if ln.get("meta", {}).get("dashboard_role_refined") in region_roles
         and ln.get("meta", {}).get("dashboard_band_id") != "bottom"
+        and _line_table_overlap_max(ln, _table_blocks) < 0.55
+        and _line_context_text_ok(ln)
     ]
+    stats: dict[str, Any] = {
+        "dashboard_region_cluster_count": 0,
+        "dashboard_region_seed_role_distribution": dict(Counter(
+            str(ln.get("meta", {}).get("dashboard_role_refined", "")) for ln in seed_blocks
+        )),
+        "dashboard_region_cross_column_blocked_count": 0,
+        "dashboard_region_cross_band_blocked_count": 0,
+        "dashboard_region_area_ratio_stats": {"min": None, "max": None, "mean": None, "count": 0},
+        "dashboard_region_line_count_stats": {"min": None, "max": None, "mean": None, "count": 0},
+    }
     if len(seed_blocks) < 2:
+        _segment_dashboard_regions._last_stats = stats
         return [], len(seed_blocks)
 
     clusters: list[list[dict]] = []
     for block in sorted(seed_blocks, key=lambda item: (item["bbox"][1], item["bbox"][0])):
         assigned = False
         bx0, by0, bx1, by1 = block["bbox"]
+        b_col = block.get("meta", {}).get("dashboard_column_id")
+        b_band = block.get("meta", {}).get("dashboard_band_id")
         for cluster in clusters:
             cx0 = min(item["bbox"][0] for item in cluster)
             cy0 = min(item["bbox"][1] for item in cluster)
             cx1 = max(item["bbox"][2] for item in cluster)
             cy1 = max(item["bbox"][3] for item in cluster)
+            cluster_cols = {item.get("meta", {}).get("dashboard_column_id") for item in cluster}
+            cluster_bands = {item.get("meta", {}).get("dashboard_band_id") for item in cluster}
+            if b_col not in cluster_cols and not (b_col == "center" or "center" in cluster_cols):
+                stats["dashboard_region_cross_column_blocked_count"] += 1
+                continue
+            if b_band not in cluster_bands and by0 - cy1 > ph * 0.025:
+                stats["dashboard_region_cross_band_blocked_count"] += 1
+                continue
             h_gap = max(0.0, max(cx0 - bx1, bx0 - cx1))
             v_gap = max(0.0, max(cy0 - by1, by0 - cy1))
-            same_band = abs(((cy0 + cy1) / 2.0) - ((by0 + by1) / 2.0)) < ph * 0.10
-            if (h_gap < pw * 0.06 and v_gap < ph * 0.04) or (same_band and h_gap < pw * 0.09):
+            same_band = abs(((cy0 + cy1) / 2.0) - ((by0 + by1) / 2.0)) < ph * 0.08
+            candidate_bbox = [min(cx0, bx0), min(cy0, by0), max(cx1, bx1), max(cy1, by1)]
+            candidate_area = _zone_area_ratio_on_page(candidate_bbox, pw, ph)
+            if candidate_area > 0.22:
+                continue
+            if (h_gap < pw * 0.045 and v_gap < ph * 0.032) or (same_band and h_gap < pw * 0.060 and v_gap < ph * 0.018):
                 cluster.append(block)
                 assigned = True
                 break
@@ -1478,6 +1984,24 @@ def _segment_dashboard_regions(
         x1 = max(item["bbox"][2] for item in cluster)
         y1 = max(item["bbox"][3] for item in cluster)
         regions.append([x0, y0, x1, y1])
+    area_ratios = [_zone_area_ratio_on_page(region, pw, ph) for region in regions]
+    line_counts = [len(cluster) for cluster in clusters]
+    if area_ratios:
+        stats["dashboard_region_area_ratio_stats"] = {
+            "min": round(min(area_ratios), 5),
+            "max": round(max(area_ratios), 5),
+            "mean": round(statistics.fmean(area_ratios), 5),
+            "count": len(area_ratios),
+        }
+    if line_counts:
+        stats["dashboard_region_line_count_stats"] = {
+            "min": min(line_counts),
+            "max": max(line_counts),
+            "mean": round(statistics.fmean(line_counts), 3),
+            "count": len(line_counts),
+        }
+    stats["dashboard_region_cluster_count"] = len(regions)
+    _segment_dashboard_regions._last_stats = stats
     return regions, len(seed_blocks)
 
 
@@ -1535,6 +2059,8 @@ def _build_dashboard_region_blocks(
         "dashboard_structured_card_count": 0,
         "dashboard_structured_card_avg_lines": 0.0,
         "dashboard_structured_card_max_lines": 0,
+        "dashboard_table_duplicate_card_suppressed_count": 0,
+        "dashboard_table_duplicate_line_suppressed_count": 0,
         "dashboard_small_mixed_block_split_count": 0,
         "dashboard_role_distribution_refined": dict(role_dist),
         "dashboard_narrative_returned_block_count": 0,
@@ -1549,6 +2075,7 @@ def _build_dashboard_region_blocks(
         "dashboard_narrative_blocks_survived_after_small_split_count": 0,
         "dashboard_narrative_line_ids_reemitted_as_fallback_count": 0,
         "dashboard_narrative_line_ids_missing_after_finalize_count": 0,
+        "dashboard_ignore_noise_suppressed_count": 0,
     }
     if not lines:
         return [], 0, debug
@@ -1601,6 +2128,8 @@ def _build_dashboard_region_blocks(
     debug["dashboard_structured_card_count"] = sc_count
     debug["dashboard_structured_card_avg_lines"] = card_stats.get("dashboard_structured_card_avg_lines", 0.0)
     debug["dashboard_structured_card_max_lines"] = card_stats.get("dashboard_structured_card_max_lines", 0)
+    debug["dashboard_table_duplicate_card_suppressed_count"] = card_stats.get("dashboard_table_duplicate_card_suppressed_count", 0)
+    debug["dashboard_table_duplicate_line_suppressed_count"] = card_stats.get("dashboard_table_duplicate_line_suppressed_count", 0)
 
     consumed: set[str] = set(atomic_used) | consumed_pre_atomic
 
@@ -1621,6 +2150,7 @@ def _build_dashboard_region_blocks(
                 "dashboard_role_refined": tln.get("meta", {}).get("dashboard_role_refined", "card_header_like"),
                 "dashboard_line_ids": [tln["id"]],
                 "dashboard_refined_in_block": [tln.get("meta", {}).get("dashboard_role_refined", "card_header_like")],
+                "dashboard_region_id": tln.get("meta", {}).get("dashboard_region_id"),
                 "summary_priority": "high",
                 "summary_exclude": False,
             },
@@ -1643,43 +2173,32 @@ def _build_dashboard_region_blocks(
             continue
         rr = ln.get("meta", {}).get("dashboard_role_refined", "")
         if rr == "ignore_noise":
-            merged.append({
-                "id": f"p{page_idx + 1}_noise{ln['id']}",
-                "type": "text",
-                "bbox": [round(v, 2) for v in ln["bbox"]],
-                "text": ln.get("text", ""),
-                "source": "dashboard_noise",
-                "confidence": 0.4,
-                "meta": {
-                    "dashboard_role": "decorative_noise",
-                    "dashboard_role_refined": "ignore_noise",
-                    "dashboard_line_ids": [ln["id"]],
-                    "dashboard_refined_in_block": ["ignore_noise"],
-                    "exclude_from_rag": True,
-                    "summary_priority": "low",
-                    "summary_exclude": True,
-                },
-            })
             consumed.add(ln["id"])
+            debug["dashboard_ignore_noise_suppressed_count"] += 1
             continue
         if ln in footers:
             continue
         coarse = ln.get("meta", {}).get("dashboard_role", "card_text")
+        # Lines classified as footer by refined role → emit as proper footer
+        is_refined_footer = (rr == "footer")
         merged.append(
             {
                 "id": f"p{page_idx + 1}_rest_{ln['id']}",
-                "type": "text",
+                "type": "footer" if is_refined_footer else "text",
                 "bbox": [round(v, 2) for v in ln["bbox"]],
                 "text": ln.get("text", ""),
                 "source": "dashboard_line_fallback",
                 "confidence": 0.78,
                 "meta": {
-                    "dashboard_role": coarse,
+                    "dashboard_role": "footer" if is_refined_footer else coarse,
                     "dashboard_role_refined": rr or "card_header_like",
                     "dashboard_line_ids": [ln["id"]],
                     "dashboard_refined_in_block": [rr or "card_header_like"],
-                    "summary_priority": "medium",
-                    "summary_exclude": False,
+                    "dashboard_region_id": ln.get("meta", {}).get("dashboard_region_id"),
+                    "dashboard_region_overlap_score": ln.get("meta", {}).get("dashboard_region_overlap_score"),
+                    "dashboard_table_overlap_frac": ln.get("meta", {}).get("dashboard_table_overlap_frac", 0.0),
+                    "summary_priority": "low" if is_refined_footer else "medium",
+                    "summary_exclude": is_refined_footer,
                 },
             }
         )
@@ -1753,6 +2272,12 @@ def _classify_dashboard_line(text: str, bbox: list[float], pw: float, ph: float,
         return "title"
     if y1 > ph * 0.9 and len(clean) <= 40:
         return "footer"
+    if _looks_structural_issue_box(clean):
+        return "issue_box"
+    if _looks_structural_ranking(clean):
+        return "ranking"
+    if _looks_structural_mini_table(clean, width, pw):
+        return "mini_table"
     if digit_count >= max(3, alpha_count) and len(clean) <= 28:
         return "kpi"
     if re.search(r"(주요|핵심|issue|comment|요약|summary|체크포인트)", clean, re.I):
@@ -1786,6 +2311,8 @@ def _is_tiny_numeric_fragment(text: str, width: float, font_size: float) -> bool
     clean = text.strip()
     if not clean:
         return True
+    if _looks_short_metric_value(clean, width, font_size):
+        return False
     if re.fullmatch(r"[\d\.\,%\+\-]{1,5}", clean) and width < 18:
         return True
     if re.fullmatch(r"[\d\.\,%\+\-]{1,3}", clean) and font_size < 8.5:
@@ -1912,6 +2439,13 @@ def _collapse_dashboard_visuals(blocks: list[dict], pw: float, ph: float, merge_
             host_meta = host.setdefault("meta", {})
             host_meta["visual_cluster_count"] = host_meta.get("visual_cluster_count", 0) + fragment_count
             host_meta["visual_support_area_ratio"] = round(host_meta.get("visual_support_area_ratio", 0.0) + area_ratio, 5)
+            summaries = [
+                str(fragment.get("meta", {}).get("visual_summary") or fragment.get("meta", {}).get("caption_text") or "").strip()
+                for fragment in cluster
+                if str(fragment.get("meta", {}).get("visual_summary") or fragment.get("meta", {}).get("caption_text") or "").strip()
+            ]
+            if summaries and not host_meta.get("visual_summary"):
+                host_meta["visual_summary"] = "\n".join(dict.fromkeys(summaries))
             for fragment in cluster:
                 merge_events.append({"kept": host["id"], "dropped": fragment["id"], "reason": "dashboard_visual_absorbed"})
             absorbed_count += fragment_count
@@ -1925,6 +2459,22 @@ def _collapse_dashboard_visuals(blocks: list[dict], pw: float, ph: float, merge_
         height = bbox[3] - bbox[1]
         aspect_ratio = width / max(1.0, height)
         visual_type = "chart" if (0.7 <= aspect_ratio <= 2.4 and area_ratio >= 0.003) else "image"
+        visual_summaries = [
+            str(fragment.get("meta", {}).get("visual_summary") or fragment.get("meta", {}).get("caption_text") or "").strip()
+            for fragment in cluster
+            if str(fragment.get("meta", {}).get("visual_summary") or fragment.get("meta", {}).get("caption_text") or "").strip()
+        ]
+        context_ids: list[str] = []
+        metrics: list[str] = []
+        for fragment in cluster:
+            fmeta = fragment.get("meta", {})
+            for cid in fmeta.get("context_block_ids") or []:
+                if cid not in context_ids:
+                    context_ids.append(cid)
+            for metric in fmeta.get("visible_key_metrics") or []:
+                if metric not in metrics:
+                    metrics.append(metric)
+        visual_summary = "\n".join(dict.fromkeys(visual_summaries))
 
         merged_visuals.append({
             "id": cluster[0]["id"],
@@ -1939,6 +2489,10 @@ def _collapse_dashboard_visuals(blocks: list[dict], pw: float, ph: float, merge_
                 "visual_fragment_count": fragment_count,
                 "visual_area_ratio": round(area_ratio, 5),
                 "visual_preserve_reason": preserve_reason or "non_decorative_cluster",
+                "visual_summary": visual_summary,
+                "caption_text": visual_summary,
+                "context_block_ids": context_ids,
+                "visible_key_metrics": metrics[:16],
             },
         })
         absorbed_count += max(0, fragment_count - 1)
@@ -1994,11 +2548,17 @@ def _postprocess_dashboard_blocks(blocks, pw, ph, layout_hint, merge_events, qua
         meta = block.setdefault("meta", {})
         role = meta.get("dashboard_role")
         text = str(block.get("text", "") or "").strip()
-        if role in ("kpi", "issue_box", "mini_table", "ranking"):
+        if role in ("kpi", "issue_box", "mini_table", "ranking") and not meta.get("summary_exclude") and not meta.get("dashboard_overlaps_table_bbox"):
             meta["preserve_atomic"] = True
             meta["summary_priority"] = "high"
+        elif meta.get("dashboard_overlaps_table_bbox"):
+            meta["summary_priority"] = "low"
+            meta["summary_exclude"] = True
+            meta["summary_exclude_reason"] = "covered_by_table_block"
         if role == "mini_table" and block["type"] != "table":
             block["type"] = "table"
+            if not meta.get("table_summary"):
+                meta["table_summary"] = str(block.get("text", "") or "").strip()
         if role == "footer" or (block["bbox"][3] > ph * 0.92 and len(text) < 36):
             block["type"] = "footer"
             meta["summary_exclude"] = True

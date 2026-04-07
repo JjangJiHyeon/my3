@@ -1,0 +1,669 @@
+[
+  {
+    "doc_id": "1483963f1ac161b67f7ff3efbb1432a0",
+    "filename": "미래에셋증권 1분기 실적보고서.pdf",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 63,
+        "page_coverage_count": 17,
+        "doc_page_coverage_count": 17,
+        "covered_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "avg_char_len": 73.9524,
+        "median_char_len": 53.0,
+        "chunk_type_distribution": {
+          "chart": 2,
+          "image": 5,
+          "native_page": 17,
+          "table": 1,
+          "text": 31,
+          "title": 7
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 3,
+        "long_chunk_count": 0,
+        "short_chunk_count": 51,
+        "content_flag_counts": {
+          "has_table": 1,
+          "has_chart": 2,
+          "has_image": 5,
+          "has_text": 63
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 29,
+        "page_coverage_count": 17,
+        "doc_page_coverage_count": 17,
+        "covered_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "avg_char_len": 99.069,
+        "median_char_len": 68.0,
+        "chunk_type_distribution": {
+          "block_group": 9,
+          "text": 20
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 13,
+        "long_chunk_count": 0,
+        "short_chunk_count": 25,
+        "content_flag_counts": {
+          "has_table": 1,
+          "has_chart": 2,
+          "has_image": 5,
+          "has_text": 29
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -34,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": 25.1166,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -26,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "2072f5b049ff3c984e7d1c1a888c1f18",
+    "filename": "미래에셋증권 2분기 실적보고서.pdf",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 66,
+        "page_coverage_count": 17,
+        "doc_page_coverage_count": 17,
+        "covered_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "avg_char_len": 70.2121,
+        "median_char_len": 48.0,
+        "chunk_type_distribution": {
+          "chart": 2,
+          "image": 6,
+          "native_page": 17,
+          "table": 1,
+          "text": 33,
+          "title": 7
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 3,
+        "long_chunk_count": 0,
+        "short_chunk_count": 55,
+        "content_flag_counts": {
+          "has_table": 1,
+          "has_chart": 2,
+          "has_image": 6,
+          "has_text": 66
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 31,
+        "page_coverage_count": 17,
+        "doc_page_coverage_count": 17,
+        "covered_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "avg_char_len": 94.6452,
+        "median_char_len": 65.0,
+        "chunk_type_distribution": {
+          "block_group": 10,
+          "text": 21
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 21,
+        "long_chunk_count": 0,
+        "short_chunk_count": 27,
+        "content_flag_counts": {
+          "has_table": 1,
+          "has_chart": 2,
+          "has_image": 6,
+          "has_text": 31
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -35,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": 24.4331,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -28,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "78e892d65ab82f707075563d9fcfe497",
+    "filename": "미래에셋증권 4분기 실적보고서.pdf",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 261,
+        "page_coverage_count": 19,
+        "doc_page_coverage_count": 19,
+        "covered_pages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "avg_char_len": 139.272,
+        "median_char_len": 50.0,
+        "chunk_type_distribution": {
+          "chart": 6,
+          "image": 5,
+          "native_page": 21,
+          "table": 104,
+          "text": 109,
+          "title": 16
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 15,
+        "long_chunk_count": 0,
+        "short_chunk_count": 196,
+        "content_flag_counts": {
+          "has_table": 104,
+          "has_chart": 6,
+          "has_image": 5,
+          "has_text": 261
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 61,
+        "page_coverage_count": 19,
+        "doc_page_coverage_count": 19,
+        "covered_pages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "avg_char_len": 264.1311,
+        "median_char_len": 170.0,
+        "chunk_type_distribution": {
+          "block_group": 43,
+          "text": 18
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 5,
+        "long_chunk_count": 0,
+        "short_chunk_count": 26,
+        "content_flag_counts": {
+          "has_table": 26,
+          "has_chart": 6,
+          "has_image": 3,
+          "has_text": 61
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -200,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": 124.8591,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -170,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "7de041057f9dcb58d0a189c04787527a",
+    "filename": "금융감독원 251125_(보도자료) 25.10월중 기업의 직접금융 조달실적.doc",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 288,
+        "page_coverage_count": 1,
+        "doc_page_coverage_count": 1,
+        "covered_pages": [
+          1
+        ],
+        "avg_char_len": 98.1146,
+        "median_char_len": 49.0,
+        "chunk_type_distribution": {
+          "native_page": 14,
+          "table": 6,
+          "text": 246,
+          "title": 22
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 266,
+        "content_flag_counts": {
+          "has_table": 6,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 288
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 15,
+        "page_coverage_count": 1,
+        "doc_page_coverage_count": 1,
+        "covered_pages": [
+          1
+        ],
+        "avg_char_len": 895.4,
+        "median_char_len": 923.0,
+        "chunk_type_distribution": {
+          "block_group": 15
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 0,
+        "content_flag_counts": {
+          "has_table": 0,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 15
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -273,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": 797.2854,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -266,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "8b2aad7a88b01e817295ed856e51bc6a",
+    "filename": "한화투자증권 두산밥캣 기업분석 리포트.pdf",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 73,
+        "page_coverage_count": 5,
+        "doc_page_coverage_count": 5,
+        "covered_pages": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "avg_char_len": 340.7397,
+        "median_char_len": 62.0,
+        "chunk_type_distribution": {
+          "native_page": 11,
+          "table": 12,
+          "text": 47,
+          "title": 1,
+          "unknown": 2
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 43,
+        "content_flag_counts": {
+          "has_table": 12,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 73
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 18,
+        "page_coverage_count": 5,
+        "doc_page_coverage_count": 5,
+        "covered_pages": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "avg_char_len": 186.2778,
+        "median_char_len": 98.5,
+        "chunk_type_distribution": {
+          "block_group": 10,
+          "text": 8
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 10,
+        "content_flag_counts": {
+          "has_table": 0,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 18
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -55,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": -154.4619,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -33,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+    "filename": "DS투자증권 시황분석 리포트.pdf",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 27,
+        "page_coverage_count": 1,
+        "doc_page_coverage_count": 1,
+        "covered_pages": [
+          1
+        ],
+        "avg_char_len": 705.2593,
+        "median_char_len": 1044.0,
+        "chunk_type_distribution": {
+          "image": 1,
+          "native_page": 7,
+          "table": 10,
+          "text": 9
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 8,
+        "content_flag_counts": {
+          "has_table": 10,
+          "has_chart": 0,
+          "has_image": 1,
+          "has_text": 27
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 5,
+        "page_coverage_count": 1,
+        "doc_page_coverage_count": 1,
+        "covered_pages": [
+          1
+        ],
+        "avg_char_len": 373.6,
+        "median_char_len": 190.0,
+        "chunk_type_distribution": {
+          "block_group": 2,
+          "text": 3
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 2,
+        "content_flag_counts": {
+          "has_table": 0,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 5
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -22,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": -331.6593,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -6,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+    "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 22,
+        "page_coverage_count": 1,
+        "doc_page_coverage_count": 1,
+        "covered_pages": [
+          1
+        ],
+        "avg_char_len": 343.3182,
+        "median_char_len": 222.5,
+        "chunk_type_distribution": {
+          "native_page": 4,
+          "table": 13,
+          "text": 4,
+          "title": 1
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 7,
+        "content_flag_counts": {
+          "has_table": 13,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 22
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 1,
+        "page_coverage_count": 1,
+        "doc_page_coverage_count": 1,
+        "covered_pages": [
+          1
+        ],
+        "avg_char_len": 477.0,
+        "median_char_len": 477.0,
+        "chunk_type_distribution": {
+          "block_group": 1
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 0,
+        "long_chunk_count": 0,
+        "short_chunk_count": 0,
+        "content_flag_counts": {
+          "has_table": 0,
+          "has_chart": 0,
+          "has_image": 0,
+          "has_text": 1
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -21,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": 133.6818,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -7,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  },
+  {
+    "doc_id": "f76e5bb34c4e5dd7afeeccdf4553a1f8",
+    "filename": "미래에셋증권 3분기 실적보고서.pdf",
+    "strategies": {
+      "llm_ready_native": {
+        "total_chunks": 65,
+        "page_coverage_count": 17,
+        "doc_page_coverage_count": 17,
+        "covered_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "avg_char_len": 80.2769,
+        "median_char_len": 50.0,
+        "chunk_type_distribution": {
+          "chart": 3,
+          "image": 5,
+          "native_page": 17,
+          "table": 1,
+          "text": 34,
+          "title": 5
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 7,
+        "long_chunk_count": 0,
+        "short_chunk_count": 51,
+        "content_flag_counts": {
+          "has_table": 1,
+          "has_chart": 3,
+          "has_image": 5,
+          "has_text": 65
+        }
+      },
+      "text_first_with_visual_support": {
+        "total_chunks": 30,
+        "page_coverage_count": 17,
+        "doc_page_coverage_count": 17,
+        "covered_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "avg_char_len": 107.8,
+        "median_char_len": 70.0,
+        "chunk_type_distribution": {
+          "block_group": 11,
+          "text": 19
+        },
+        "empty_retrieval_text_count": 0,
+        "source_block_ids_empty_count": 0,
+        "sparse_page_related_chunk_count": 19,
+        "long_chunk_count": 0,
+        "short_chunk_count": 23,
+        "content_flag_counts": {
+          "has_table": 1,
+          "has_chart": 3,
+          "has_image": 5,
+          "has_text": 30
+        }
+      }
+    },
+    "strategy_difference": {
+      "chunk_count_delta_text_first_minus_llm_ready_native": -35,
+      "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+      "avg_char_len_delta_text_first_minus_llm_ready_native": 27.5231,
+      "short_chunk_delta_text_first_minus_llm_ready_native": -28,
+      "long_chunk_delta_text_first_minus_llm_ready_native": 0
+    }
+  }
+]

@@ -1,0 +1,1623 @@
+{
+  "schema_version": 1,
+  "strategy_name": "text_first_with_visual_support",
+  "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+  "filename": "DS투자증권 시황분석 리포트.pdf",
+  "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\DS투자증권 시황분석 리포트.pdf",
+  "document_type": "mixed_document",
+  "pipeline_used": "dashboard_brief_pipeline",
+  "quality_grade": "A",
+  "total_chunks": 5,
+  "issues": [],
+  "chunks": [
+    {
+      "chunk_id": "9454b2bef0a064ff78f0cb719036c8f8:text_first_with_visual_support:p1:0001:block_group:0756d6f0",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\DS투자증권 시황분석 리포트.pdf",
+      "document_type": "mixed_document",
+      "pipeline_used": "dashboard_brief_pipeline",
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 1,
+      "chunk_type": "block_group",
+      "section_title": "",
+      "page_title": "",
+      "associated_title": "",
+      "source_block_ids": [
+        "p1_atom_c0",
+        "p1_narr0",
+        "p1_narr2"
+      ],
+      "chosen_text_source": null,
+      "summary_priority": "high",
+      "has_text": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "2026.03.16\n지수 종합\n\n[한국] 지난주금요일코스피1.7% 하락, 코스닥0.4% 상승. 코스피는호르무즈해협에서유조선공격등중동발대외\n불확실성커지면서리스크오프심리부각되자대형주중심으로매물출회(삼성전자-2.3%, SK하이닉스-2.2%). 원\n전, 조선, 방산등산업재상대적으로강세. 고유가레벨에서유가변동성커지면서원/달러환율은1,500원대까지근접.\n원화상방압력확대. 외국인3월8거래일동안13.2조원순매도. 코스닥은금융투자중심으로매수유입되면서강보합\n[미국] 지난주금요일3대지수하락. 중동갈등과사모신용리스크가잔존하는가운데국제유가가$100/bbl 상회. 1월\nPCE 물가지표가예상치에부합했음에도인플레우려로인한연준기준금리인하기대감축소는투자심리위축으로이어\n짐. 또한, 4분기실질GDP(잠정)가+0.7% QoQ로4분기속보치(+1.4%) 및3분기(+4.4%) 대비크게낮아지면서스\n태그플레이션우려확산. CME FedWatch의연내기준금리25bp 인하확률은40%대까지내려감. 10년물국채금리는\n4.285%까지상승하면서대형기술주낙폭확대. 여기에중동발헬륨가스공급우려도더해지면서반도체생산의새로\n운변수추가. 한편, 메타(-3.8%)의차세대AI 모델인'아보카도'가성능이슈로출시지연, 어도비(-7.6%)는실적부\n진한가운데CEO 교체된다는보도되되면서하락. 반면마이크론(+5.1%), 샌디스크(+6.9%) 등일부반도체주는상승\n\n하면서개별종목이슈에따른주가차별화양상",
+      "display_text": "2026.03.16\n지수 종합\n\n[한국] 지난주금요일코스피1.7% 하락, 코스닥0.4% 상승. 코스피는호르무즈해협에서유조선공격등중동발대외\n불확실성커지면서리스크오프심리부각되자대형주중심으로매물출회(삼성전자-2.3%, SK하이닉스-2.2%). 원\n전, 조선, 방산등산업재상대적으로강세. 고유가레벨에서유가변동성커지면서원/달러환율은1,500원대까지근접.\n원화상방압력확대. 외국인3월8거래일동안13.2조원순매도. 코스닥은금융투자중심으로매수유입되면서강보합\n[미국] 지난주금요일3대지수하락. 중동갈등과사모신용리스크가잔존하는가운데국제유가가$100/bbl 상회. 1월\nPCE 물가지표가예상치에부합했음에도인플레우려로인한연준기준금리인하기대감축소는투자심리위축으로이어\n짐. 또한, 4분기실질GDP(잠정)가+0.7% QoQ로4분기속보치(+1.4%) 및3분기(+4.4%) 대비크게낮아지면서스\n태그플레이션우려확산. CME FedWatch의연내기준금리25bp 인하확률은40%대까지내려감. 10년물국채금리는\n4.285%까지상승하면서대형기술주낙폭확대. 여기에중동발헬륨가스공급우려도더해지면서반도체생산의새로\n운변수추가. 한편, 메타(-3.8%)의차세대AI 모델인'아보카도'가성능이슈로출시지연, 어도비(-7.6%)는실적부\n진한가운데CEO 교체된다는보도되되면서하락. 반면마이크론(+5.1%), 샌디스크(+6.9%) 등일부반도체주는상승\n\n하면서개별종목이슈에따른주가차별화양상",
+      "evidence_preview": "2026.03.16\n지수 종합\n\n[한국] 지난주금요일코스피1.7% 하락, 코스닥0.4% 상승. 코스피는호르무즈해협에서유조선공격등중동발대외\n불확실성커지면서리스크오프심리부각되자대형주중심으로매물출회(삼성전자-2.3%, SK하이닉스-2.2%). 원\n전, 조선, 방산등산업재상대적으로강세. 고유가레벨에서유가변동성커지면서원/달러환율은1,500원대까지근접.\n원화상방압력확대. 외국인3월8거래일동안13.2조원순매도. 코스닥은금융투자중심으로매수유입되면서강보합\n[미국] 지난주금요일3대지수하락. 중동갈등과사모신용리스크가잔존하는가운데국제유가가$100/bbl 상회. 1월\nPCE 물가지표가예상치에부합했음에도인플레우려로인한연준기준금리인하기대감축소는투자심리위축으로이어\n짐. 또한, 4분기실질GDP(잠정)가+0.7% QoQ로4분기속보치(+1.4%) 및3분기(+4.4%) 대비크게낮아지면서스\n태그플레이션우려확산. CME FedWatch의연내기준금리25bp 인하확률은40%대까지내려감. 10년물국채금리는\n4.285%까지상승하",
+      "char_len": 687,
+      "token_estimate": 171,
+      "metadata": {
+        "parser_debug": {
+          "pipeline_used": "dashboard_brief_pipeline",
+          "dashboard_signals": [
+            "card_region_grouping",
+            "kpi_fragment_filtering"
+          ],
+          "segmented_regions": 3,
+          "dashboard_block_types": [
+            "card_text",
+            "footer",
+            "kpi"
+          ],
+          "fragment_absorbed_count": 102,
+          "numeric_fragment_dropped_count": 239,
+          "decorative_visual_dropped_count": 74,
+          "preferred_layout_hint": "mixed_visual",
+          "dashboard_region_merge_input_count": 0,
+          "dashboard_region_merge_kept_count": 0,
+          "dashboard_region_merge_excluded_count": 0,
+          "dashboard_narrative_filter_drop_count": 0,
+          "dashboard_large_region_guard_triggered": 0,
+          "dashboard_exclusion_zone_count": 7,
+          "dashboard_hard_exclusion_zone_count": 6,
+          "dashboard_soft_exclusion_zone_count": 1,
+          "dashboard_hard_exclusion_max_area_ratio": 0.1732,
+          "dashboard_soft_exclusion_max_area_ratio": 0.0016,
+          "dashboard_exclusion_zone_filtered_line_count": 172,
+          "dashboard_band_count": 3,
+          "dashboard_column_count": 3,
+          "dashboard_cross_band_merge_blocked_count": 0,
+          "dashboard_cross_column_merge_blocked_count": 0,
+          "dashboard_region_purity_score_stats": {
+            "min": null,
+            "max": null,
+            "mean": null,
+            "count": 0
+          },
+          "dashboard_region_purity_reject_count": 0,
+          "dashboard_large_region_abort_count": 0,
+          "dashboard_narrative_paragraph_count": 15,
+          "dashboard_paragraph_reconstruction_merge_count": 18,
+          "dashboard_narrative_singleton_count": 8,
+          "dashboard_narrative_candidate_count_pre_filter": 33,
+          "dashboard_narrative_candidate_count_post_filter": 33,
+          "dashboard_left_section_count": 0,
+          "dashboard_left_structured_body_count": 0,
+          "dashboard_structured_card_count": 1,
+          "dashboard_structured_card_avg_lines": 1.0,
+          "dashboard_structured_card_max_lines": 1,
+          "dashboard_table_duplicate_card_suppressed_count": 10,
+          "dashboard_table_duplicate_line_suppressed_count": 120,
+          "dashboard_small_mixed_block_split_count": 0,
+          "dashboard_role_distribution_refined": {
+            "chart_label_like": 125,
+            "narrative_text": 33,
+            "footer": 9,
+            "ignore_noise": 45,
+            "contact_info_like": 2,
+            "card_header_like": 1
+          },
+          "dashboard_narrative_returned_block_count": 15,
+          "dashboard_narrative_returned_line_count": 33,
+          "dashboard_narrative_returned_block_ids_head": [
+            "p1_narr0",
+            "p1_narr1",
+            "p1_narr2",
+            "p1_narr3",
+            "p1_narr4"
+          ],
+          "dashboard_narrative_consumed_line_count": 33,
+          "dashboard_blocks_after_title_count": 0,
+          "dashboard_blocks_after_narrative_extend_count": 15,
+          "dashboard_blocks_after_atomic_extend_count": 23,
+          "dashboard_blocks_before_small_split_count": 32,
+          "dashboard_blocks_after_small_split_count": 32,
+          "dashboard_narrative_blocks_survived_after_small_split_count": 15,
+          "dashboard_narrative_line_ids_reemitted_as_fallback_count": 0,
+          "dashboard_narrative_line_ids_missing_after_finalize_count": 0,
+          "dashboard_ignore_noise_suppressed_count": 45,
+          "dashboard_small_split_narrative_paragraph_blocks_seen": 15,
+          "dashboard_small_split_narrative_paragraph_blocks_exempt": 15,
+          "dashboard_region_seed_count": 39,
+          "dashboard_region_cluster_count": 3,
+          "dashboard_region_seed_role_distribution": {
+            "chart_label_like": 5,
+            "narrative_text": 33,
+            "card_header_like": 1
+          },
+          "dashboard_region_cross_column_blocked_count": 38,
+          "dashboard_region_cross_band_blocked_count": 0,
+          "dashboard_region_area_ratio_stats": {
+            "min": 0.00046,
+            "max": 0.21929,
+            "mean": 0.08644,
+            "count": 3
+          },
+          "dashboard_region_line_count_stats": {
+            "min": 1,
+            "max": 32,
+            "mean": 13.0,
+            "count": 3
+          },
+          "dashboard_region_assignment_count": 40,
+          "dashboard_region_unassigned_line_count": 175,
+          "dashboard_table_context_enriched_count": 4,
+          "dashboard_table_context_line_count": 124,
+          "dashboard_visual_context_enriched_count": 1,
+          "dashboard_visual_context_line_count": 1,
+          "dropped_blocks": [],
+          "bbox_warnings": [],
+          "page_layout_hint": "mixed_visual",
+          "reading_order_strategy": "y_bucket_sorted",
+          "reading_order_basis": "title first, footer last, 20px grouping, then x",
+          "quality_notes": [
+            "dashboard_visual_fragments_collapsed",
+            "dashboard_pipeline_postprocess_applied",
+            "table_quality_enrichment_applied"
+          ],
+          "merge_events": [
+            {
+              "kept": "p1_narr0",
+              "dropped": "p1_narr1",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr4",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr5",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr7",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr8",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr9",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr10",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr11",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_atom_c1",
+              "dropped": "p1_scard0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_c0",
+              "dropped": "p1_atom_chl0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_atom_chl1",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_narr6",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl3",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl2",
+              "reason": "tiny_absorption"
+            }
+          ],
+          "classification_overrides": [],
+          "dedup_stats": {
+            "dropped_duplicates": 0
+          },
+          "text_merge_stats": {
+            "merged_pairs": 8
+          },
+          "table_enrichment": {
+            "candidate_count": 4,
+            "kept_table_count": 4,
+            "rejected_candidate_count": 0,
+            "reject_reason_counts": {}
+          },
+          "page_rag_structure": {
+            "page_title": "",
+            "page_title_source": {
+              "source": "none"
+            },
+            "rag_order_strategy": "page_title_body_table_visual_note"
+          },
+          "block_type_counts": {
+            "text": 9,
+            "table": 4,
+            "image": 2,
+            "footer": 9
+          }
+        },
+        "preview_image": "/api/documents/9454b2bef0a064ff78f0cb719036c8f8/pages/1/preview",
+        "page_width": 595.3200073242188,
+        "page_height": 841.9200439453125,
+        "routing": {
+          "routing_confidence": 0.77,
+          "routing_reason": "No single layout dominates; text, numeric, table, and visual signals coexist across pages. Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+          "routing_reasons": [
+            "No single layout dominates; text, numeric, table, and visual signals coexist across pages.",
+            "Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+            "Page-type distribution is led by `mixed_document` pages at 1.00."
+          ],
+          "routing_signals": {
+            "page_count": 1,
+            "text_density": 3636.0,
+            "numeric_density": 0.285,
+            "table_candidate_count": 14.0,
+            "image_or_drawing_count": 2.0,
+            "estimated_column_count": 2.0,
+            "title_ratio": 0.0,
+            "repeated_header_footer_ratio": 0.0,
+            "avg_block_count": 24.0,
+            "landscape_ratio": 0.0,
+            "visual_fragment_ratio": 0.292,
+            "paragraph_continuity": 0.222,
+            "page_type_distribution": {
+              "slide_ir": 0,
+              "text_report": 0,
+              "dashboard_brief": 0,
+              "table_heavy": 0,
+              "mixed_document": 1
+            },
+            "page_type_distribution_ratio": {
+              "slide_ir": 0.0,
+              "text_report": 0.0,
+              "dashboard_brief": 0.0,
+              "table_heavy": 0.0,
+              "mixed_document": 1.0
+            },
+            "parser_page_type_distribution": {
+              "unknown": 1
+            },
+            "layout_hint_distribution": {
+              "mixed_visual": 1
+            },
+            "routing_scores": {
+              "slide_ir": 0.129,
+              "text_report": 0.488,
+              "dashboard_brief": 0.737,
+              "table_heavy": 0.687
+            },
+            "confidence": 0.77,
+            "is_truly_dashboard_signal": false
+          },
+          "page_type_distribution": {
+            "slide_ir": 0,
+            "text_report": 0,
+            "dashboard_brief": 0,
+            "table_heavy": 0,
+            "mixed_document": 1
+          }
+        },
+        "block_type_counts": {
+          "text": 9,
+          "table": 4,
+          "image": 2,
+          "footer": 9
+        },
+        "sparse_page": false,
+        "group_key": "text_flow:1",
+        "split_index": 0
+      }
+    },
+    {
+      "chunk_id": "9454b2bef0a064ff78f0cb719036c8f8:text_first_with_visual_support:p1:0002:text:140ce145",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\DS투자증권 시황분석 리포트.pdf",
+      "document_type": "mixed_document",
+      "pipeline_used": "dashboard_brief_pipeline",
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 2,
+      "chunk_type": "text",
+      "section_title": "",
+      "page_title": "",
+      "associated_title": "",
+      "source_block_ids": [
+        "p1_narr3"
+      ],
+      "chosen_text_source": null,
+      "summary_priority": "high",
+      "has_text": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "현시장에서가장큰변수는유가. 다만해외IB 등에서는중장기적으로수요대비공급이여전히압도적이기때문에추세\n적으로는고유가레벨의장기화는제한적이라고보는시각이지배적\n주간 이벤트 (현지시간 기준)\n03/16(월) : 엔비디아GTC(~19일)\n03/17(화) : FOMC(~18일), 미국생산자물가지수, 마이크론실적발표\n03/19(목): BOJ·BOE, ECB 통화정책회의\n[원전] 에너지다변화. 유가90~100$/bbl 레벨에서유럽에서도더이상원전제로를유지하기는쉽지않을것으로보\nTIGER 코리아원자력(+6.1%), 우리기술(+11.6%), 대우건설(+17.8%), GS건설(+8.5%), 한텍(+6.9%), 한전기술(+6.4%), 일\n진파워(+6.3%), 현대건설(+5.6%), 지투파워(+5.4%), 우진(+4.4%), 오르비텍(+3.9%), 비에이치아이(+3.9%)\n[게임] 대외적인요인으로시장불확실성확대되는가운데유가변동성으로인한영향제한적인방어주중심으로수급\n유입. 2008년, 2018년, 2020년주식시장이부진했던시기게임업종은방어역할을했던경험. 데브시스터즈, 펄어비\n스, 넷마블등이올해신작출시를앞두고있는점도긍정적\nTIGER 게임TOP10(+5.8%), 펄어비스(+9.5%, 붉은사막출시임박), 크래프톤(+8.2%), 엔씨소프트(+7.8%), 카카오게임즈\n(+4.4%), 컴투스(+4.0%), 넷마블(+3.6%), 네오위즈(+2.8%), 위메이드맥스(+2.7%), 넥슨게임즈(+2.6%)\n[바이오텍] 코스닥바이오텍중심으로상승하면서지수하락방어. AACR(04/17~22) 등글로벌헬스케어이벤트앞\n두고기대감선반영. 일반적으로글로벌헬스케어이벤트전기대감유입된이후셀온매물출회되는패턴\n디앤디파마텍(+15.4%), 보로노이(+11.3%), 리가켐바이오(+9.4%), 올릭스(+8.5%), 알지노믹스(+7.2%), 오름테라퓨틱",
+      "display_text": "현시장에서가장큰변수는유가. 다만해외IB 등에서는중장기적으로수요대비공급이여전히압도적이기때문에추세\n적으로는고유가레벨의장기화는제한적이라고보는시각이지배적\n주간 이벤트 (현지시간 기준)\n03/16(월) : 엔비디아GTC(~19일)\n03/17(화) : FOMC(~18일), 미국생산자물가지수, 마이크론실적발표\n03/19(목): BOJ·BOE, ECB 통화정책회의\n[원전] 에너지다변화. 유가90~100$/bbl 레벨에서유럽에서도더이상원전제로를유지하기는쉽지않을것으로보\nTIGER 코리아원자력(+6.1%), 우리기술(+11.6%), 대우건설(+17.8%), GS건설(+8.5%), 한텍(+6.9%), 한전기술(+6.4%), 일\n진파워(+6.3%), 현대건설(+5.6%), 지투파워(+5.4%), 우진(+4.4%), 오르비텍(+3.9%), 비에이치아이(+3.9%)\n[게임] 대외적인요인으로시장불확실성확대되는가운데유가변동성으로인한영향제한적인방어주중심으로수급\n유입. 2008년, 2018년, 2020년주식시장이부진했던시기게임업종은방어역할을했던경험. 데브시스터즈, 펄어비\n스, 넷마블등이올해신작출시를앞두고있는점도긍정적\nTIGER 게임TOP10(+5.8%), 펄어비스(+9.5%, 붉은사막출시임박), 크래프톤(+8.2%), 엔씨소프트(+7.8%), 카카오게임즈\n(+4.4%), 컴투스(+4.0%), 넷마블(+3.6%), 네오위즈(+2.8%), 위메이드맥스(+2.7%), 넥슨게임즈(+2.6%)\n[바이오텍] 코스닥바이오텍중심으로상승하면서지수하락방어. AACR(04/17~22) 등글로벌헬스케어이벤트앞\n두고기대감선반영. 일반적으로글로벌헬스케어이벤트전기대감유입된이후셀온매물출회되는패턴\n디앤디파마텍(+15.4%), 보로노이(+11.3%), 리가켐바이오(+9.4%), 올릭스(+8.5%), 알지노믹스(+7.2%), 오름테라퓨틱",
+      "evidence_preview": "현시장에서가장큰변수는유가. 다만해외IB 등에서는중장기적으로수요대비공급이여전히압도적이기때문에추세\n적으로는고유가레벨의장기화는제한적이라고보는시각이지배적\n주간 이벤트 (현지시간 기준)\n03/16(월) : 엔비디아GTC(~19일)\n03/17(화) : FOMC(~18일), 미국생산자물가지수, 마이크론실적발표\n03/19(목): BOJ·BOE, ECB 통화정책회의\n[원전] 에너지다변화. 유가90~100$/bbl 레벨에서유럽에서도더이상원전제로를유지하기는쉽지않을것으로보\nTIGER 코리아원자력(+6.1%), 우리기술(+11.6%), 대우건설(+17.8%), GS건설(+8.5%), 한텍(+6.9%), 한전기술(+6.4%), 일\n진파워(+6.3%), 현대건설(+5.6%), 지투파워(+5.4%), 우진(+4.4%), 오르비텍(+3.9%), 비에이치아이(+3.9%)\n[게임] 대외적인요인으로시장불확실성확대되는가운데유가변동성으로인한영향제한적인방어주중심으로수급\n유입. 2008년, 2018년, 2020년주식시장이부진",
+      "char_len": 892,
+      "token_estimate": 223,
+      "metadata": {
+        "parser_debug": {
+          "pipeline_used": "dashboard_brief_pipeline",
+          "dashboard_signals": [
+            "card_region_grouping",
+            "kpi_fragment_filtering"
+          ],
+          "segmented_regions": 3,
+          "dashboard_block_types": [
+            "card_text",
+            "footer",
+            "kpi"
+          ],
+          "fragment_absorbed_count": 102,
+          "numeric_fragment_dropped_count": 239,
+          "decorative_visual_dropped_count": 74,
+          "preferred_layout_hint": "mixed_visual",
+          "dashboard_region_merge_input_count": 0,
+          "dashboard_region_merge_kept_count": 0,
+          "dashboard_region_merge_excluded_count": 0,
+          "dashboard_narrative_filter_drop_count": 0,
+          "dashboard_large_region_guard_triggered": 0,
+          "dashboard_exclusion_zone_count": 7,
+          "dashboard_hard_exclusion_zone_count": 6,
+          "dashboard_soft_exclusion_zone_count": 1,
+          "dashboard_hard_exclusion_max_area_ratio": 0.1732,
+          "dashboard_soft_exclusion_max_area_ratio": 0.0016,
+          "dashboard_exclusion_zone_filtered_line_count": 172,
+          "dashboard_band_count": 3,
+          "dashboard_column_count": 3,
+          "dashboard_cross_band_merge_blocked_count": 0,
+          "dashboard_cross_column_merge_blocked_count": 0,
+          "dashboard_region_purity_score_stats": {
+            "min": null,
+            "max": null,
+            "mean": null,
+            "count": 0
+          },
+          "dashboard_region_purity_reject_count": 0,
+          "dashboard_large_region_abort_count": 0,
+          "dashboard_narrative_paragraph_count": 15,
+          "dashboard_paragraph_reconstruction_merge_count": 18,
+          "dashboard_narrative_singleton_count": 8,
+          "dashboard_narrative_candidate_count_pre_filter": 33,
+          "dashboard_narrative_candidate_count_post_filter": 33,
+          "dashboard_left_section_count": 0,
+          "dashboard_left_structured_body_count": 0,
+          "dashboard_structured_card_count": 1,
+          "dashboard_structured_card_avg_lines": 1.0,
+          "dashboard_structured_card_max_lines": 1,
+          "dashboard_table_duplicate_card_suppressed_count": 10,
+          "dashboard_table_duplicate_line_suppressed_count": 120,
+          "dashboard_small_mixed_block_split_count": 0,
+          "dashboard_role_distribution_refined": {
+            "chart_label_like": 125,
+            "narrative_text": 33,
+            "footer": 9,
+            "ignore_noise": 45,
+            "contact_info_like": 2,
+            "card_header_like": 1
+          },
+          "dashboard_narrative_returned_block_count": 15,
+          "dashboard_narrative_returned_line_count": 33,
+          "dashboard_narrative_returned_block_ids_head": [
+            "p1_narr0",
+            "p1_narr1",
+            "p1_narr2",
+            "p1_narr3",
+            "p1_narr4"
+          ],
+          "dashboard_narrative_consumed_line_count": 33,
+          "dashboard_blocks_after_title_count": 0,
+          "dashboard_blocks_after_narrative_extend_count": 15,
+          "dashboard_blocks_after_atomic_extend_count": 23,
+          "dashboard_blocks_before_small_split_count": 32,
+          "dashboard_blocks_after_small_split_count": 32,
+          "dashboard_narrative_blocks_survived_after_small_split_count": 15,
+          "dashboard_narrative_line_ids_reemitted_as_fallback_count": 0,
+          "dashboard_narrative_line_ids_missing_after_finalize_count": 0,
+          "dashboard_ignore_noise_suppressed_count": 45,
+          "dashboard_small_split_narrative_paragraph_blocks_seen": 15,
+          "dashboard_small_split_narrative_paragraph_blocks_exempt": 15,
+          "dashboard_region_seed_count": 39,
+          "dashboard_region_cluster_count": 3,
+          "dashboard_region_seed_role_distribution": {
+            "chart_label_like": 5,
+            "narrative_text": 33,
+            "card_header_like": 1
+          },
+          "dashboard_region_cross_column_blocked_count": 38,
+          "dashboard_region_cross_band_blocked_count": 0,
+          "dashboard_region_area_ratio_stats": {
+            "min": 0.00046,
+            "max": 0.21929,
+            "mean": 0.08644,
+            "count": 3
+          },
+          "dashboard_region_line_count_stats": {
+            "min": 1,
+            "max": 32,
+            "mean": 13.0,
+            "count": 3
+          },
+          "dashboard_region_assignment_count": 40,
+          "dashboard_region_unassigned_line_count": 175,
+          "dashboard_table_context_enriched_count": 4,
+          "dashboard_table_context_line_count": 124,
+          "dashboard_visual_context_enriched_count": 1,
+          "dashboard_visual_context_line_count": 1,
+          "dropped_blocks": [],
+          "bbox_warnings": [],
+          "page_layout_hint": "mixed_visual",
+          "reading_order_strategy": "y_bucket_sorted",
+          "reading_order_basis": "title first, footer last, 20px grouping, then x",
+          "quality_notes": [
+            "dashboard_visual_fragments_collapsed",
+            "dashboard_pipeline_postprocess_applied",
+            "table_quality_enrichment_applied"
+          ],
+          "merge_events": [
+            {
+              "kept": "p1_narr0",
+              "dropped": "p1_narr1",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr4",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr5",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr7",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr8",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr9",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr10",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr11",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_atom_c1",
+              "dropped": "p1_scard0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_c0",
+              "dropped": "p1_atom_chl0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_atom_chl1",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_narr6",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl3",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl2",
+              "reason": "tiny_absorption"
+            }
+          ],
+          "classification_overrides": [],
+          "dedup_stats": {
+            "dropped_duplicates": 0
+          },
+          "text_merge_stats": {
+            "merged_pairs": 8
+          },
+          "table_enrichment": {
+            "candidate_count": 4,
+            "kept_table_count": 4,
+            "rejected_candidate_count": 0,
+            "reject_reason_counts": {}
+          },
+          "page_rag_structure": {
+            "page_title": "",
+            "page_title_source": {
+              "source": "none"
+            },
+            "rag_order_strategy": "page_title_body_table_visual_note"
+          },
+          "block_type_counts": {
+            "text": 9,
+            "table": 4,
+            "image": 2,
+            "footer": 9
+          }
+        },
+        "preview_image": "/api/documents/9454b2bef0a064ff78f0cb719036c8f8/pages/1/preview",
+        "page_width": 595.3200073242188,
+        "page_height": 841.9200439453125,
+        "routing": {
+          "routing_confidence": 0.77,
+          "routing_reason": "No single layout dominates; text, numeric, table, and visual signals coexist across pages. Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+          "routing_reasons": [
+            "No single layout dominates; text, numeric, table, and visual signals coexist across pages.",
+            "Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+            "Page-type distribution is led by `mixed_document` pages at 1.00."
+          ],
+          "routing_signals": {
+            "page_count": 1,
+            "text_density": 3636.0,
+            "numeric_density": 0.285,
+            "table_candidate_count": 14.0,
+            "image_or_drawing_count": 2.0,
+            "estimated_column_count": 2.0,
+            "title_ratio": 0.0,
+            "repeated_header_footer_ratio": 0.0,
+            "avg_block_count": 24.0,
+            "landscape_ratio": 0.0,
+            "visual_fragment_ratio": 0.292,
+            "paragraph_continuity": 0.222,
+            "page_type_distribution": {
+              "slide_ir": 0,
+              "text_report": 0,
+              "dashboard_brief": 0,
+              "table_heavy": 0,
+              "mixed_document": 1
+            },
+            "page_type_distribution_ratio": {
+              "slide_ir": 0.0,
+              "text_report": 0.0,
+              "dashboard_brief": 0.0,
+              "table_heavy": 0.0,
+              "mixed_document": 1.0
+            },
+            "parser_page_type_distribution": {
+              "unknown": 1
+            },
+            "layout_hint_distribution": {
+              "mixed_visual": 1
+            },
+            "routing_scores": {
+              "slide_ir": 0.129,
+              "text_report": 0.488,
+              "dashboard_brief": 0.737,
+              "table_heavy": 0.687
+            },
+            "confidence": 0.77,
+            "is_truly_dashboard_signal": false
+          },
+          "page_type_distribution": {
+            "slide_ir": 0,
+            "text_report": 0,
+            "dashboard_brief": 0,
+            "table_heavy": 0,
+            "mixed_document": 1
+          }
+        },
+        "block_type_counts": {
+          "text": 9,
+          "table": 4,
+          "image": 2,
+          "footer": 9
+        },
+        "sparse_page": false,
+        "group_key": "text_flow:2",
+        "split_index": 0
+      }
+    },
+    {
+      "chunk_id": "9454b2bef0a064ff78f0cb719036c8f8:text_first_with_visual_support:p1:0003:block_group:7e1f0846",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\DS투자증권 시황분석 리포트.pdf",
+      "document_type": "mixed_document",
+      "pipeline_used": "dashboard_brief_pipeline",
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 3,
+      "chunk_type": "block_group",
+      "section_title": "",
+      "page_title": "",
+      "associated_title": "",
+      "source_block_ids": [
+        "p1_narr12",
+        "p1_narr13",
+        "p1_narr14"
+      ],
+      "chosen_text_source": null,
+      "summary_priority": "high",
+      "has_text": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "(+5.7%), 에이비엘바이오(+4.8%), 펩트론(+2.9%)\n(+3.4%), 쏠리드(+2.8%)\n테마 이슈\n\n[통신장비] LS마린솔루션(+13.0%), 오이솔루션(+11.9%), RF머트리얼즈(+6.8%), 자람테크놀로지(+5.9%), 에치에프알\n\n[코스닥액티브ETF] 시장변동성확대되는가운데코스닥액티브ETF는출시이후4거래일중3거래일상승",
+      "display_text": "(+5.7%), 에이비엘바이오(+4.8%), 펩트론(+2.9%)\n(+3.4%), 쏠리드(+2.8%)\n테마 이슈\n\n[통신장비] LS마린솔루션(+13.0%), 오이솔루션(+11.9%), RF머트리얼즈(+6.8%), 자람테크놀로지(+5.9%), 에치에프알\n\n[코스닥액티브ETF] 시장변동성확대되는가운데코스닥액티브ETF는출시이후4거래일중3거래일상승",
+      "evidence_preview": "(+5.7%), 에이비엘바이오(+4.8%), 펩트론(+2.9%)\n(+3.4%), 쏠리드(+2.8%)\n테마 이슈\n\n[통신장비] LS마린솔루션(+13.0%), 오이솔루션(+11.9%), RF머트리얼즈(+6.8%), 자람테크놀로지(+5.9%), 에치에프알\n\n[코스닥액티브ETF] 시장변동성확대되는가운데코스닥액티브ETF는출시이후4거래일중3거래일상승",
+      "char_len": 190,
+      "token_estimate": 47,
+      "metadata": {
+        "parser_debug": {
+          "pipeline_used": "dashboard_brief_pipeline",
+          "dashboard_signals": [
+            "card_region_grouping",
+            "kpi_fragment_filtering"
+          ],
+          "segmented_regions": 3,
+          "dashboard_block_types": [
+            "card_text",
+            "footer",
+            "kpi"
+          ],
+          "fragment_absorbed_count": 102,
+          "numeric_fragment_dropped_count": 239,
+          "decorative_visual_dropped_count": 74,
+          "preferred_layout_hint": "mixed_visual",
+          "dashboard_region_merge_input_count": 0,
+          "dashboard_region_merge_kept_count": 0,
+          "dashboard_region_merge_excluded_count": 0,
+          "dashboard_narrative_filter_drop_count": 0,
+          "dashboard_large_region_guard_triggered": 0,
+          "dashboard_exclusion_zone_count": 7,
+          "dashboard_hard_exclusion_zone_count": 6,
+          "dashboard_soft_exclusion_zone_count": 1,
+          "dashboard_hard_exclusion_max_area_ratio": 0.1732,
+          "dashboard_soft_exclusion_max_area_ratio": 0.0016,
+          "dashboard_exclusion_zone_filtered_line_count": 172,
+          "dashboard_band_count": 3,
+          "dashboard_column_count": 3,
+          "dashboard_cross_band_merge_blocked_count": 0,
+          "dashboard_cross_column_merge_blocked_count": 0,
+          "dashboard_region_purity_score_stats": {
+            "min": null,
+            "max": null,
+            "mean": null,
+            "count": 0
+          },
+          "dashboard_region_purity_reject_count": 0,
+          "dashboard_large_region_abort_count": 0,
+          "dashboard_narrative_paragraph_count": 15,
+          "dashboard_paragraph_reconstruction_merge_count": 18,
+          "dashboard_narrative_singleton_count": 8,
+          "dashboard_narrative_candidate_count_pre_filter": 33,
+          "dashboard_narrative_candidate_count_post_filter": 33,
+          "dashboard_left_section_count": 0,
+          "dashboard_left_structured_body_count": 0,
+          "dashboard_structured_card_count": 1,
+          "dashboard_structured_card_avg_lines": 1.0,
+          "dashboard_structured_card_max_lines": 1,
+          "dashboard_table_duplicate_card_suppressed_count": 10,
+          "dashboard_table_duplicate_line_suppressed_count": 120,
+          "dashboard_small_mixed_block_split_count": 0,
+          "dashboard_role_distribution_refined": {
+            "chart_label_like": 125,
+            "narrative_text": 33,
+            "footer": 9,
+            "ignore_noise": 45,
+            "contact_info_like": 2,
+            "card_header_like": 1
+          },
+          "dashboard_narrative_returned_block_count": 15,
+          "dashboard_narrative_returned_line_count": 33,
+          "dashboard_narrative_returned_block_ids_head": [
+            "p1_narr0",
+            "p1_narr1",
+            "p1_narr2",
+            "p1_narr3",
+            "p1_narr4"
+          ],
+          "dashboard_narrative_consumed_line_count": 33,
+          "dashboard_blocks_after_title_count": 0,
+          "dashboard_blocks_after_narrative_extend_count": 15,
+          "dashboard_blocks_after_atomic_extend_count": 23,
+          "dashboard_blocks_before_small_split_count": 32,
+          "dashboard_blocks_after_small_split_count": 32,
+          "dashboard_narrative_blocks_survived_after_small_split_count": 15,
+          "dashboard_narrative_line_ids_reemitted_as_fallback_count": 0,
+          "dashboard_narrative_line_ids_missing_after_finalize_count": 0,
+          "dashboard_ignore_noise_suppressed_count": 45,
+          "dashboard_small_split_narrative_paragraph_blocks_seen": 15,
+          "dashboard_small_split_narrative_paragraph_blocks_exempt": 15,
+          "dashboard_region_seed_count": 39,
+          "dashboard_region_cluster_count": 3,
+          "dashboard_region_seed_role_distribution": {
+            "chart_label_like": 5,
+            "narrative_text": 33,
+            "card_header_like": 1
+          },
+          "dashboard_region_cross_column_blocked_count": 38,
+          "dashboard_region_cross_band_blocked_count": 0,
+          "dashboard_region_area_ratio_stats": {
+            "min": 0.00046,
+            "max": 0.21929,
+            "mean": 0.08644,
+            "count": 3
+          },
+          "dashboard_region_line_count_stats": {
+            "min": 1,
+            "max": 32,
+            "mean": 13.0,
+            "count": 3
+          },
+          "dashboard_region_assignment_count": 40,
+          "dashboard_region_unassigned_line_count": 175,
+          "dashboard_table_context_enriched_count": 4,
+          "dashboard_table_context_line_count": 124,
+          "dashboard_visual_context_enriched_count": 1,
+          "dashboard_visual_context_line_count": 1,
+          "dropped_blocks": [],
+          "bbox_warnings": [],
+          "page_layout_hint": "mixed_visual",
+          "reading_order_strategy": "y_bucket_sorted",
+          "reading_order_basis": "title first, footer last, 20px grouping, then x",
+          "quality_notes": [
+            "dashboard_visual_fragments_collapsed",
+            "dashboard_pipeline_postprocess_applied",
+            "table_quality_enrichment_applied"
+          ],
+          "merge_events": [
+            {
+              "kept": "p1_narr0",
+              "dropped": "p1_narr1",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr4",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr5",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr7",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr8",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr9",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr10",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr11",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_atom_c1",
+              "dropped": "p1_scard0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_c0",
+              "dropped": "p1_atom_chl0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_atom_chl1",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_narr6",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl3",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl2",
+              "reason": "tiny_absorption"
+            }
+          ],
+          "classification_overrides": [],
+          "dedup_stats": {
+            "dropped_duplicates": 0
+          },
+          "text_merge_stats": {
+            "merged_pairs": 8
+          },
+          "table_enrichment": {
+            "candidate_count": 4,
+            "kept_table_count": 4,
+            "rejected_candidate_count": 0,
+            "reject_reason_counts": {}
+          },
+          "page_rag_structure": {
+            "page_title": "",
+            "page_title_source": {
+              "source": "none"
+            },
+            "rag_order_strategy": "page_title_body_table_visual_note"
+          },
+          "block_type_counts": {
+            "text": 9,
+            "table": 4,
+            "image": 2,
+            "footer": 9
+          }
+        },
+        "preview_image": "/api/documents/9454b2bef0a064ff78f0cb719036c8f8/pages/1/preview",
+        "page_width": 595.3200073242188,
+        "page_height": 841.9200439453125,
+        "routing": {
+          "routing_confidence": 0.77,
+          "routing_reason": "No single layout dominates; text, numeric, table, and visual signals coexist across pages. Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+          "routing_reasons": [
+            "No single layout dominates; text, numeric, table, and visual signals coexist across pages.",
+            "Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+            "Page-type distribution is led by `mixed_document` pages at 1.00."
+          ],
+          "routing_signals": {
+            "page_count": 1,
+            "text_density": 3636.0,
+            "numeric_density": 0.285,
+            "table_candidate_count": 14.0,
+            "image_or_drawing_count": 2.0,
+            "estimated_column_count": 2.0,
+            "title_ratio": 0.0,
+            "repeated_header_footer_ratio": 0.0,
+            "avg_block_count": 24.0,
+            "landscape_ratio": 0.0,
+            "visual_fragment_ratio": 0.292,
+            "paragraph_continuity": 0.222,
+            "page_type_distribution": {
+              "slide_ir": 0,
+              "text_report": 0,
+              "dashboard_brief": 0,
+              "table_heavy": 0,
+              "mixed_document": 1
+            },
+            "page_type_distribution_ratio": {
+              "slide_ir": 0.0,
+              "text_report": 0.0,
+              "dashboard_brief": 0.0,
+              "table_heavy": 0.0,
+              "mixed_document": 1.0
+            },
+            "parser_page_type_distribution": {
+              "unknown": 1
+            },
+            "layout_hint_distribution": {
+              "mixed_visual": 1
+            },
+            "routing_scores": {
+              "slide_ir": 0.129,
+              "text_report": 0.488,
+              "dashboard_brief": 0.737,
+              "table_heavy": 0.687
+            },
+            "confidence": 0.77,
+            "is_truly_dashboard_signal": false
+          },
+          "page_type_distribution": {
+            "slide_ir": 0,
+            "text_report": 0,
+            "dashboard_brief": 0,
+            "table_heavy": 0,
+            "mixed_document": 1
+          }
+        },
+        "block_type_counts": {
+          "text": 9,
+          "table": 4,
+          "image": 2,
+          "footer": 9
+        },
+        "sparse_page": false,
+        "group_key": "text_flow:3",
+        "split_index": 0
+      }
+    },
+    {
+      "chunk_id": "9454b2bef0a064ff78f0cb719036c8f8:text_first_with_visual_support:p1:0004:text:fe3f5ece",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\DS투자증권 시황분석 리포트.pdf",
+      "document_type": "mixed_document",
+      "pipeline_used": "dashboard_brief_pipeline",
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 4,
+      "chunk_type": "text",
+      "section_title": "",
+      "page_title": "",
+      "associated_title": "",
+      "source_block_ids": [
+        "p1_atom_c1"
+      ],
+      "chosen_text_source": null,
+      "summary_priority": "medium",
+      "has_text": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "02-709-2663 / guswl4461@ds-sec.co.kr\n김현지연구원",
+      "display_text": "02-709-2663 / guswl4461@ds-sec.co.kr\n김현지연구원",
+      "evidence_preview": "02-709-2663 / guswl4461@ds-sec.co.kr\n김현지연구원",
+      "char_len": 43,
+      "token_estimate": 10,
+      "metadata": {
+        "parser_debug": {
+          "pipeline_used": "dashboard_brief_pipeline",
+          "dashboard_signals": [
+            "card_region_grouping",
+            "kpi_fragment_filtering"
+          ],
+          "segmented_regions": 3,
+          "dashboard_block_types": [
+            "card_text",
+            "footer",
+            "kpi"
+          ],
+          "fragment_absorbed_count": 102,
+          "numeric_fragment_dropped_count": 239,
+          "decorative_visual_dropped_count": 74,
+          "preferred_layout_hint": "mixed_visual",
+          "dashboard_region_merge_input_count": 0,
+          "dashboard_region_merge_kept_count": 0,
+          "dashboard_region_merge_excluded_count": 0,
+          "dashboard_narrative_filter_drop_count": 0,
+          "dashboard_large_region_guard_triggered": 0,
+          "dashboard_exclusion_zone_count": 7,
+          "dashboard_hard_exclusion_zone_count": 6,
+          "dashboard_soft_exclusion_zone_count": 1,
+          "dashboard_hard_exclusion_max_area_ratio": 0.1732,
+          "dashboard_soft_exclusion_max_area_ratio": 0.0016,
+          "dashboard_exclusion_zone_filtered_line_count": 172,
+          "dashboard_band_count": 3,
+          "dashboard_column_count": 3,
+          "dashboard_cross_band_merge_blocked_count": 0,
+          "dashboard_cross_column_merge_blocked_count": 0,
+          "dashboard_region_purity_score_stats": {
+            "min": null,
+            "max": null,
+            "mean": null,
+            "count": 0
+          },
+          "dashboard_region_purity_reject_count": 0,
+          "dashboard_large_region_abort_count": 0,
+          "dashboard_narrative_paragraph_count": 15,
+          "dashboard_paragraph_reconstruction_merge_count": 18,
+          "dashboard_narrative_singleton_count": 8,
+          "dashboard_narrative_candidate_count_pre_filter": 33,
+          "dashboard_narrative_candidate_count_post_filter": 33,
+          "dashboard_left_section_count": 0,
+          "dashboard_left_structured_body_count": 0,
+          "dashboard_structured_card_count": 1,
+          "dashboard_structured_card_avg_lines": 1.0,
+          "dashboard_structured_card_max_lines": 1,
+          "dashboard_table_duplicate_card_suppressed_count": 10,
+          "dashboard_table_duplicate_line_suppressed_count": 120,
+          "dashboard_small_mixed_block_split_count": 0,
+          "dashboard_role_distribution_refined": {
+            "chart_label_like": 125,
+            "narrative_text": 33,
+            "footer": 9,
+            "ignore_noise": 45,
+            "contact_info_like": 2,
+            "card_header_like": 1
+          },
+          "dashboard_narrative_returned_block_count": 15,
+          "dashboard_narrative_returned_line_count": 33,
+          "dashboard_narrative_returned_block_ids_head": [
+            "p1_narr0",
+            "p1_narr1",
+            "p1_narr2",
+            "p1_narr3",
+            "p1_narr4"
+          ],
+          "dashboard_narrative_consumed_line_count": 33,
+          "dashboard_blocks_after_title_count": 0,
+          "dashboard_blocks_after_narrative_extend_count": 15,
+          "dashboard_blocks_after_atomic_extend_count": 23,
+          "dashboard_blocks_before_small_split_count": 32,
+          "dashboard_blocks_after_small_split_count": 32,
+          "dashboard_narrative_blocks_survived_after_small_split_count": 15,
+          "dashboard_narrative_line_ids_reemitted_as_fallback_count": 0,
+          "dashboard_narrative_line_ids_missing_after_finalize_count": 0,
+          "dashboard_ignore_noise_suppressed_count": 45,
+          "dashboard_small_split_narrative_paragraph_blocks_seen": 15,
+          "dashboard_small_split_narrative_paragraph_blocks_exempt": 15,
+          "dashboard_region_seed_count": 39,
+          "dashboard_region_cluster_count": 3,
+          "dashboard_region_seed_role_distribution": {
+            "chart_label_like": 5,
+            "narrative_text": 33,
+            "card_header_like": 1
+          },
+          "dashboard_region_cross_column_blocked_count": 38,
+          "dashboard_region_cross_band_blocked_count": 0,
+          "dashboard_region_area_ratio_stats": {
+            "min": 0.00046,
+            "max": 0.21929,
+            "mean": 0.08644,
+            "count": 3
+          },
+          "dashboard_region_line_count_stats": {
+            "min": 1,
+            "max": 32,
+            "mean": 13.0,
+            "count": 3
+          },
+          "dashboard_region_assignment_count": 40,
+          "dashboard_region_unassigned_line_count": 175,
+          "dashboard_table_context_enriched_count": 4,
+          "dashboard_table_context_line_count": 124,
+          "dashboard_visual_context_enriched_count": 1,
+          "dashboard_visual_context_line_count": 1,
+          "dropped_blocks": [],
+          "bbox_warnings": [],
+          "page_layout_hint": "mixed_visual",
+          "reading_order_strategy": "y_bucket_sorted",
+          "reading_order_basis": "title first, footer last, 20px grouping, then x",
+          "quality_notes": [
+            "dashboard_visual_fragments_collapsed",
+            "dashboard_pipeline_postprocess_applied",
+            "table_quality_enrichment_applied"
+          ],
+          "merge_events": [
+            {
+              "kept": "p1_narr0",
+              "dropped": "p1_narr1",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr4",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr5",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr7",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr8",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr9",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr10",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr11",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_atom_c1",
+              "dropped": "p1_scard0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_c0",
+              "dropped": "p1_atom_chl0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_atom_chl1",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_narr6",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl3",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl2",
+              "reason": "tiny_absorption"
+            }
+          ],
+          "classification_overrides": [],
+          "dedup_stats": {
+            "dropped_duplicates": 0
+          },
+          "text_merge_stats": {
+            "merged_pairs": 8
+          },
+          "table_enrichment": {
+            "candidate_count": 4,
+            "kept_table_count": 4,
+            "rejected_candidate_count": 0,
+            "reject_reason_counts": {}
+          },
+          "page_rag_structure": {
+            "page_title": "",
+            "page_title_source": {
+              "source": "none"
+            },
+            "rag_order_strategy": "page_title_body_table_visual_note"
+          },
+          "block_type_counts": {
+            "text": 9,
+            "table": 4,
+            "image": 2,
+            "footer": 9
+          }
+        },
+        "preview_image": "/api/documents/9454b2bef0a064ff78f0cb719036c8f8/pages/1/preview",
+        "page_width": 595.3200073242188,
+        "page_height": 841.9200439453125,
+        "routing": {
+          "routing_confidence": 0.77,
+          "routing_reason": "No single layout dominates; text, numeric, table, and visual signals coexist across pages. Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+          "routing_reasons": [
+            "No single layout dominates; text, numeric, table, and visual signals coexist across pages.",
+            "Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+            "Page-type distribution is led by `mixed_document` pages at 1.00."
+          ],
+          "routing_signals": {
+            "page_count": 1,
+            "text_density": 3636.0,
+            "numeric_density": 0.285,
+            "table_candidate_count": 14.0,
+            "image_or_drawing_count": 2.0,
+            "estimated_column_count": 2.0,
+            "title_ratio": 0.0,
+            "repeated_header_footer_ratio": 0.0,
+            "avg_block_count": 24.0,
+            "landscape_ratio": 0.0,
+            "visual_fragment_ratio": 0.292,
+            "paragraph_continuity": 0.222,
+            "page_type_distribution": {
+              "slide_ir": 0,
+              "text_report": 0,
+              "dashboard_brief": 0,
+              "table_heavy": 0,
+              "mixed_document": 1
+            },
+            "page_type_distribution_ratio": {
+              "slide_ir": 0.0,
+              "text_report": 0.0,
+              "dashboard_brief": 0.0,
+              "table_heavy": 0.0,
+              "mixed_document": 1.0
+            },
+            "parser_page_type_distribution": {
+              "unknown": 1
+            },
+            "layout_hint_distribution": {
+              "mixed_visual": 1
+            },
+            "routing_scores": {
+              "slide_ir": 0.129,
+              "text_report": 0.488,
+              "dashboard_brief": 0.737,
+              "table_heavy": 0.687
+            },
+            "confidence": 0.77,
+            "is_truly_dashboard_signal": false
+          },
+          "page_type_distribution": {
+            "slide_ir": 0,
+            "text_report": 0,
+            "dashboard_brief": 0,
+            "table_heavy": 0,
+            "mixed_document": 1
+          }
+        },
+        "block_type_counts": {
+          "text": 9,
+          "table": 4,
+          "image": 2,
+          "footer": 9
+        },
+        "sparse_page": false,
+        "group_key": "r0",
+        "split_index": 0
+      }
+    },
+    {
+      "chunk_id": "9454b2bef0a064ff78f0cb719036c8f8:text_first_with_visual_support:p1:0005:text:18f3a3e5",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\DS투자증권 시황분석 리포트.pdf",
+      "document_type": "mixed_document",
+      "pipeline_used": "dashboard_brief_pipeline",
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 5,
+      "chunk_type": "text",
+      "section_title": "",
+      "page_title": "",
+      "associated_title": "",
+      "source_block_ids": [
+        "p1_atom_h0"
+      ],
+      "chosen_text_source": null,
+      "summary_priority": "medium",
+      "has_text": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "03/18(수) : 엔비디아GTC 젠슨황CEO 기조연설\n업종 이슈\n임. 유럽시장에서의신규수주기대감반영",
+      "display_text": "03/18(수) : 엔비디아GTC 젠슨황CEO 기조연설\n업종 이슈\n임. 유럽시장에서의신규수주기대감반영",
+      "evidence_preview": "03/18(수) : 엔비디아GTC 젠슨황CEO 기조연설\n업종 이슈\n임. 유럽시장에서의신규수주기대감반영",
+      "char_len": 56,
+      "token_estimate": 14,
+      "metadata": {
+        "parser_debug": {
+          "pipeline_used": "dashboard_brief_pipeline",
+          "dashboard_signals": [
+            "card_region_grouping",
+            "kpi_fragment_filtering"
+          ],
+          "segmented_regions": 3,
+          "dashboard_block_types": [
+            "card_text",
+            "footer",
+            "kpi"
+          ],
+          "fragment_absorbed_count": 102,
+          "numeric_fragment_dropped_count": 239,
+          "decorative_visual_dropped_count": 74,
+          "preferred_layout_hint": "mixed_visual",
+          "dashboard_region_merge_input_count": 0,
+          "dashboard_region_merge_kept_count": 0,
+          "dashboard_region_merge_excluded_count": 0,
+          "dashboard_narrative_filter_drop_count": 0,
+          "dashboard_large_region_guard_triggered": 0,
+          "dashboard_exclusion_zone_count": 7,
+          "dashboard_hard_exclusion_zone_count": 6,
+          "dashboard_soft_exclusion_zone_count": 1,
+          "dashboard_hard_exclusion_max_area_ratio": 0.1732,
+          "dashboard_soft_exclusion_max_area_ratio": 0.0016,
+          "dashboard_exclusion_zone_filtered_line_count": 172,
+          "dashboard_band_count": 3,
+          "dashboard_column_count": 3,
+          "dashboard_cross_band_merge_blocked_count": 0,
+          "dashboard_cross_column_merge_blocked_count": 0,
+          "dashboard_region_purity_score_stats": {
+            "min": null,
+            "max": null,
+            "mean": null,
+            "count": 0
+          },
+          "dashboard_region_purity_reject_count": 0,
+          "dashboard_large_region_abort_count": 0,
+          "dashboard_narrative_paragraph_count": 15,
+          "dashboard_paragraph_reconstruction_merge_count": 18,
+          "dashboard_narrative_singleton_count": 8,
+          "dashboard_narrative_candidate_count_pre_filter": 33,
+          "dashboard_narrative_candidate_count_post_filter": 33,
+          "dashboard_left_section_count": 0,
+          "dashboard_left_structured_body_count": 0,
+          "dashboard_structured_card_count": 1,
+          "dashboard_structured_card_avg_lines": 1.0,
+          "dashboard_structured_card_max_lines": 1,
+          "dashboard_table_duplicate_card_suppressed_count": 10,
+          "dashboard_table_duplicate_line_suppressed_count": 120,
+          "dashboard_small_mixed_block_split_count": 0,
+          "dashboard_role_distribution_refined": {
+            "chart_label_like": 125,
+            "narrative_text": 33,
+            "footer": 9,
+            "ignore_noise": 45,
+            "contact_info_like": 2,
+            "card_header_like": 1
+          },
+          "dashboard_narrative_returned_block_count": 15,
+          "dashboard_narrative_returned_line_count": 33,
+          "dashboard_narrative_returned_block_ids_head": [
+            "p1_narr0",
+            "p1_narr1",
+            "p1_narr2",
+            "p1_narr3",
+            "p1_narr4"
+          ],
+          "dashboard_narrative_consumed_line_count": 33,
+          "dashboard_blocks_after_title_count": 0,
+          "dashboard_blocks_after_narrative_extend_count": 15,
+          "dashboard_blocks_after_atomic_extend_count": 23,
+          "dashboard_blocks_before_small_split_count": 32,
+          "dashboard_blocks_after_small_split_count": 32,
+          "dashboard_narrative_blocks_survived_after_small_split_count": 15,
+          "dashboard_narrative_line_ids_reemitted_as_fallback_count": 0,
+          "dashboard_narrative_line_ids_missing_after_finalize_count": 0,
+          "dashboard_ignore_noise_suppressed_count": 45,
+          "dashboard_small_split_narrative_paragraph_blocks_seen": 15,
+          "dashboard_small_split_narrative_paragraph_blocks_exempt": 15,
+          "dashboard_region_seed_count": 39,
+          "dashboard_region_cluster_count": 3,
+          "dashboard_region_seed_role_distribution": {
+            "chart_label_like": 5,
+            "narrative_text": 33,
+            "card_header_like": 1
+          },
+          "dashboard_region_cross_column_blocked_count": 38,
+          "dashboard_region_cross_band_blocked_count": 0,
+          "dashboard_region_area_ratio_stats": {
+            "min": 0.00046,
+            "max": 0.21929,
+            "mean": 0.08644,
+            "count": 3
+          },
+          "dashboard_region_line_count_stats": {
+            "min": 1,
+            "max": 32,
+            "mean": 13.0,
+            "count": 3
+          },
+          "dashboard_region_assignment_count": 40,
+          "dashboard_region_unassigned_line_count": 175,
+          "dashboard_table_context_enriched_count": 4,
+          "dashboard_table_context_line_count": 124,
+          "dashboard_visual_context_enriched_count": 1,
+          "dashboard_visual_context_line_count": 1,
+          "dropped_blocks": [],
+          "bbox_warnings": [],
+          "page_layout_hint": "mixed_visual",
+          "reading_order_strategy": "y_bucket_sorted",
+          "reading_order_basis": "title first, footer last, 20px grouping, then x",
+          "quality_notes": [
+            "dashboard_visual_fragments_collapsed",
+            "dashboard_pipeline_postprocess_applied",
+            "table_quality_enrichment_applied"
+          ],
+          "merge_events": [
+            {
+              "kept": "p1_narr0",
+              "dropped": "p1_narr1",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr4",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr5",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr7",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr8",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr9",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr10",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_narr3",
+              "dropped": "p1_narr11",
+              "reason": "paragraph_merge"
+            },
+            {
+              "kept": "p1_atom_c1",
+              "dropped": "p1_scard0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_c0",
+              "dropped": "p1_atom_chl0",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_atom_chl1",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_atom_h0",
+              "dropped": "p1_narr6",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl3",
+              "reason": "tiny_absorption"
+            },
+            {
+              "kept": "p1_narr12",
+              "dropped": "p1_atom_chl2",
+              "reason": "tiny_absorption"
+            }
+          ],
+          "classification_overrides": [],
+          "dedup_stats": {
+            "dropped_duplicates": 0
+          },
+          "text_merge_stats": {
+            "merged_pairs": 8
+          },
+          "table_enrichment": {
+            "candidate_count": 4,
+            "kept_table_count": 4,
+            "rejected_candidate_count": 0,
+            "reject_reason_counts": {}
+          },
+          "page_rag_structure": {
+            "page_title": "",
+            "page_title_source": {
+              "source": "none"
+            },
+            "rag_order_strategy": "page_title_body_table_visual_note"
+          },
+          "block_type_counts": {
+            "text": 9,
+            "table": 4,
+            "image": 2,
+            "footer": 9
+          }
+        },
+        "preview_image": "/api/documents/9454b2bef0a064ff78f0cb719036c8f8/pages/1/preview",
+        "page_width": 595.3200073242188,
+        "page_height": 841.9200439453125,
+        "routing": {
+          "routing_confidence": 0.77,
+          "routing_reason": "No single layout dominates; text, numeric, table, and visual signals coexist across pages. Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+          "routing_reasons": [
+            "No single layout dominates; text, numeric, table, and visual signals coexist across pages.",
+            "Top routing scores are close (0.74 max), so a mixed document label is more appropriate.",
+            "Page-type distribution is led by `mixed_document` pages at 1.00."
+          ],
+          "routing_signals": {
+            "page_count": 1,
+            "text_density": 3636.0,
+            "numeric_density": 0.285,
+            "table_candidate_count": 14.0,
+            "image_or_drawing_count": 2.0,
+            "estimated_column_count": 2.0,
+            "title_ratio": 0.0,
+            "repeated_header_footer_ratio": 0.0,
+            "avg_block_count": 24.0,
+            "landscape_ratio": 0.0,
+            "visual_fragment_ratio": 0.292,
+            "paragraph_continuity": 0.222,
+            "page_type_distribution": {
+              "slide_ir": 0,
+              "text_report": 0,
+              "dashboard_brief": 0,
+              "table_heavy": 0,
+              "mixed_document": 1
+            },
+            "page_type_distribution_ratio": {
+              "slide_ir": 0.0,
+              "text_report": 0.0,
+              "dashboard_brief": 0.0,
+              "table_heavy": 0.0,
+              "mixed_document": 1.0
+            },
+            "parser_page_type_distribution": {
+              "unknown": 1
+            },
+            "layout_hint_distribution": {
+              "mixed_visual": 1
+            },
+            "routing_scores": {
+              "slide_ir": 0.129,
+              "text_report": 0.488,
+              "dashboard_brief": 0.737,
+              "table_heavy": 0.687
+            },
+            "confidence": 0.77,
+            "is_truly_dashboard_signal": false
+          },
+          "page_type_distribution": {
+            "slide_ir": 0,
+            "text_report": 0,
+            "dashboard_brief": 0,
+            "table_heavy": 0,
+            "mixed_document": 1
+          }
+        },
+        "block_type_counts": {
+          "text": 9,
+          "table": 4,
+          "image": 2,
+          "footer": 9
+        },
+        "sparse_page": false,
+        "group_key": "r1",
+        "split_index": 0
+      }
+    }
+  ]
+}

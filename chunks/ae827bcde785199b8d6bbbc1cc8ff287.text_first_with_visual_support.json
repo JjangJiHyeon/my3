@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "strategy_name": "text_first_with_visual_support",
+  "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+  "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+  "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\농협 2022년 9월말 기준 사업보고서.hwp",
+  "document_type": "mixed_document",
+  "pipeline_used": "hwp_parser::custom OLE HWP parser",
+  "quality_grade": "A",
+  "total_chunks": 1,
+  "issues": [],
+  "chunks": [
+    {
+      "chunk_id": "ae827bcde785199b8d6bbbc1cc8ff287:text_first_with_visual_support:p1:0001:block_group:e4ae317b",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+      "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\농협 2022년 9월말 기준 사업보고서.hwp",
+      "document_type": "mixed_document",
+      "pipeline_used": "hwp_parser::custom OLE HWP parser",
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 1,
+      "chunk_type": "block_group",
+      "section_title": "(붙임1)",
+      "page_title": "",
+      "associated_title": "(붙임1)",
+      "source_block_ids": [
+        "p1_b0",
+        "p1_b7",
+        "p1_b8",
+        "p1_b13",
+        "p1_b14"
+      ],
+      "chosen_text_source": null,
+      "summary_priority": null,
+      "has_text": true,
+      "has_table": false,
+      "has_chart": false,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "(붙임1)\n\n사무소명\n주 소 (또는 위치)\n전화번호\n본점(주사무소)\n전남 완도군 청산면 청산로 29\n061-552-9388\n하나로마트\n전남 완도군 청산면 청산로 29\n061-552-5293\n경제사업소/주유소\n전남 완도군 청산면 청산로 29\n061-554-9370\n청산매표소\n전남 완도군 청산면 청산로 3\n061-552-9381\n완도운송사업소\n전남 완도군 완도읍 장보고대로 336\n061-552-9385\n나. 인원 현황\n\n구 분\n2022년 9월말\n비고\n임 원\n조합장(상임)\n1(1)\n이사(상임)\n7(-)\n감사(상임)\n2(-)\n직 원\n지도·경제\n35\n신용\n4\n합 계\n19\nⅡ. 주요사업 추진 현황\n1. 교육지원사업\n\n(단위 : 명, 대)\n\n기준일\n2022년\n2021년\n증감\n입도객\n입도차량\n입도객\n입도차량\n입도객\n입도차량\n9.30\n150,411\n36,258\n121,985\n33,968\n28,426\n2,290\nⅢ. 주요사업 추진 실적\n(단위 : 백만원, %)",
+      "display_text": "(붙임1)\n\n사무소명\n주 소 (또는 위치)\n전화번호\n본점(주사무소)\n전남 완도군 청산면 청산로 29\n061-552-9388\n하나로마트\n전남 완도군 청산면 청산로 29\n061-552-5293\n경제사업소/주유소\n전남 완도군 청산면 청산로 29\n061-554-9370\n청산매표소\n전남 완도군 청산면 청산로 3\n061-552-9381\n완도운송사업소\n전남 완도군 완도읍 장보고대로 336\n061-552-9385\n나. 인원 현황\n\n구 분\n2022년 9월말\n비고\n임 원\n조합장(상임)\n1(1)\n이사(상임)\n7(-)\n감사(상임)\n2(-)\n직 원\n지도·경제\n35\n신용\n4\n합 계\n19\nⅡ. 주요사업 추진 현황\n1. 교육지원사업\n\n(단위 : 명, 대)\n\n기준일\n2022년\n2021년\n증감\n입도객\n입도차량\n입도객\n입도차량\n입도객\n입도차량\n9.30\n150,411\n36,258\n121,985\n33,968\n28,426\n2,290\nⅢ. 주요사업 추진 실적\n(단위 : 백만원, %)",
+      "evidence_preview": "(붙임1)\n\n사무소명\n주 소 (또는 위치)\n전화번호\n본점(주사무소)\n전남 완도군 청산면 청산로 29\n061-552-9388\n하나로마트\n전남 완도군 청산면 청산로 29\n061-552-5293\n경제사업소/주유소\n전남 완도군 청산면 청산로 29\n061-554-9370\n청산매표소\n전남 완도군 청산면 청산로 3\n061-552-9381\n완도운송사업소\n전남 완도군 완도읍 장보고대로 336\n061-552-9385\n나. 인원 현황\n\n구 분\n2022년 9월말\n비고\n임 원\n조합장(상임)\n1(1)\n이사(상임)\n7(-)\n감사(상임)\n2(-)\n직 원\n지도·경제\n35\n신용\n4\n합 계\n19\nⅡ. 주요사업 추진 현황\n1. 교육지원사업\n\n(단위 : 명, 대)\n\n기준일\n2022년\n2021년\n증감\n입도객\n입도차량\n입도객\n입도차량\n입도객\n입도차량\n9.30\n150,411\n36,258\n121,985\n33,968\n28,426\n2,290\nⅢ. 주요사업 추진 실적\n(단위 : 백만원, %)",
+      "char_len": 477,
+      "token_estimate": 119,
+      "metadata": {
+        "parser_debug": {
+          "preview_generated": false,
+          "preview_error": null,
+          "native_text_chars": 10763,
+          "ocr_used": false,
+          "ocr_trigger_reason": "ocr_not_needed",
+          "candidate_counts": {
+            "raw_text_blocks": 1,
+            "final_blocks": 18
+          },
+          "block_type_counts": {
+            "title": 1,
+            "text": 4,
+            "table": 13
+          },
+          "dropped_blocks": [],
+          "bbox_warnings": [],
+          "narrative_analysis": {
+            "num_ratio": 0.101,
+            "sentence_endings_found": 1,
+            "long_narrative_paragraphs": 1,
+            "short_label_patterns": 63,
+            "is_false_positive_warning_candidate": false,
+            "is_truly_dashboard": false
+          },
+          "structure_extraction": {
+            "title_count": 0,
+            "text_count": 5,
+            "table_count": 13,
+            "table_like_line_count": 0,
+            "compact_table_row_count": 0,
+            "tab_hint_line_count": 0,
+            "summary_pair_row_count": 0,
+            "record_table_start_count": 17
+          },
+          "document_type": "mixed_document",
+          "refined_document_type": "mixed_document",
+          "doc_type": "mixed_document",
+          "pipeline_used": "hwp_parser::custom OLE HWP parser"
+        },
+        "preview_image": null,
+        "page_width": 0,
+        "page_height": 0,
+        "routing": {
+          "routing_confidence": 0.77,
+          "routing_reason": "No single layout dominates; text, numeric, table, and visual signals coexist across pages. Top routing scores are close (0.65 max), so a mixed document label is more appropriate.",
+          "routing_reasons": [
+            "No single layout dominates; text, numeric, table, and visual signals coexist across pages.",
+            "Top routing scores are close (0.65 max), so a mixed document label is more appropriate.",
+            "Page-type distribution is led by `mixed_document` pages at 1.00."
+          ],
+          "routing_signals": {
+            "page_count": 1,
+            "text_density": 8519.0,
+            "numeric_density": 0.102,
+            "table_candidate_count": 26.0,
+            "image_or_drawing_count": 0.0,
+            "estimated_column_count": 1.0,
+            "title_ratio": 0.001,
+            "repeated_header_footer_ratio": 0.0,
+            "avg_block_count": 18.0,
+            "landscape_ratio": 0.0,
+            "visual_fragment_ratio": 0.111,
+            "paragraph_continuity": 0.6,
+            "page_type_distribution": {
+              "slide_ir": 0,
+              "text_report": 0,
+              "dashboard_brief": 0,
+              "table_heavy": 0,
+              "mixed_document": 1
+            },
+            "page_type_distribution_ratio": {
+              "slide_ir": 0.0,
+              "text_report": 0.0,
+              "dashboard_brief": 0.0,
+              "table_heavy": 0.0,
+              "mixed_document": 1.0
+            },
+            "parser_page_type_distribution": {
+              "unknown": 1
+            },
+            "layout_hint_distribution": {
+              "unknown": 1
+            },
+            "routing_scores": {
+              "slide_ir": 0.042,
+              "text_report": 0.651,
+              "dashboard_brief": 0.416,
+              "table_heavy": 0.645
+            },
+            "confidence": 0.77,
+            "is_truly_dashboard_signal": false
+          },
+          "page_type_distribution": {
+            "slide_ir": 0,
+            "text_report": 0,
+            "dashboard_brief": 0,
+            "table_heavy": 0,
+            "mixed_document": 1
+          }
+        },
+        "block_type_counts": {
+          "title": 1,
+          "text": 4,
+          "table": 13
+        },
+        "sparse_page": false,
+        "group_key": "text_flow:1",
+        "split_index": 0
+      }
+    }
+  ]
+}

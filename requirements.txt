@@ -8,6 +8,7 @@ aiofiles
 PyMuPDF
 pdfplumber
 camelot-py[cv]
+pymupdf4llm
 
 # ── OCR (selective, local only) ──
 easyocr

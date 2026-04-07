@@ -1,0 +1,49 @@
+{
+  "doc_id": "7de041057f9dcb58d0a189c04787527a",
+  "filename": "금융감독원 251125_(보도자료) 25.10월중 기업의 직접금융 조달실적.doc",
+  "strategies": [
+    {
+      "doc_id": "7de041057f9dcb58d0a189c04787527a",
+      "filename": "금융감독원 251125_(보도자료) 25.10월중 기업의 직접금융 조달실적.doc",
+      "strategy_name": "text_first_with_visual_support",
+      "total_chunks": 15,
+      "chunk_type_distribution": {
+        "block_group": 15
+      },
+      "avg_char_len": 895.4,
+      "min_char_len": 572,
+      "max_char_len": 950,
+      "page_coverage": [
+        1
+      ],
+      "page_coverage_count": 1,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": []
+    },
+    {
+      "doc_id": "7de041057f9dcb58d0a189c04787527a",
+      "filename": "금융감독원 251125_(보도자료) 25.10월중 기업의 직접금융 조달실적.doc",
+      "strategy_name": "llm_ready_native",
+      "total_chunks": 288,
+      "chunk_type_distribution": {
+        "native_page": 14,
+        "title": 22,
+        "text": 246,
+        "table": 6
+      },
+      "avg_char_len": 98.11,
+      "min_char_len": 3,
+      "max_char_len": 1099,
+      "page_coverage": [
+        1
+      ],
+      "page_coverage_count": 1,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": []
+    }
+  ]
+}

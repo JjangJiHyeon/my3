@@ -1,0 +1,103 @@
+{
+  "doc_id": "f76e5bb34c4e5dd7afeeccdf4553a1f8",
+  "filename": "미래에셋증권 3분기 실적보고서.pdf",
+  "strategies": [
+    {
+      "doc_id": "f76e5bb34c4e5dd7afeeccdf4553a1f8",
+      "filename": "미래에셋증권 3분기 실적보고서.pdf",
+      "strategy_name": "text_first_with_visual_support",
+      "total_chunks": 30,
+      "chunk_type_distribution": {
+        "text": 19,
+        "block_group": 11
+      },
+      "avg_char_len": 107.8,
+      "min_char_len": 26,
+      "max_char_len": 807,
+      "page_coverage": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "page_coverage_count": 17,
+      "sparse_page_chunk_count": 17,
+      "sparse_page_ratio": 0.5667,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": [
+        "sparse_page:1",
+        "empty_page_no_chunk:1",
+        "sparse_page:2",
+        "sparse_page:3",
+        "sparse_page:4",
+        "sparse_page:9",
+        "sparse_page:12",
+        "sparse_page:13",
+        "sparse_page:14",
+        "sparse_page:15",
+        "sparse_page:16",
+        "sparse_page:17",
+        "sparse_page:18",
+        "sparse_page:19",
+        "empty_page_no_chunk:19"
+      ]
+    },
+    {
+      "doc_id": "f76e5bb34c4e5dd7afeeccdf4553a1f8",
+      "filename": "미래에셋증권 3분기 실적보고서.pdf",
+      "strategy_name": "llm_ready_native",
+      "total_chunks": 65,
+      "chunk_type_distribution": {
+        "native_page": 17,
+        "text": 34,
+        "chart": 3,
+        "table": 1,
+        "title": 5,
+        "image": 5
+      },
+      "avg_char_len": 80.28,
+      "min_char_len": 4,
+      "max_char_len": 509,
+      "page_coverage": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "page_coverage_count": 17,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": [
+        "empty_llm_ready_page:1",
+        "empty_llm_ready_page:19"
+      ]
+    }
+  ]
+}

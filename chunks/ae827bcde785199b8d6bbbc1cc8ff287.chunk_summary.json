@@ -1,0 +1,49 @@
+{
+  "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+  "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+  "strategies": [
+    {
+      "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+      "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+      "strategy_name": "text_first_with_visual_support",
+      "total_chunks": 1,
+      "chunk_type_distribution": {
+        "block_group": 1
+      },
+      "avg_char_len": 477,
+      "min_char_len": 477,
+      "max_char_len": 477,
+      "page_coverage": [
+        1
+      ],
+      "page_coverage_count": 1,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": []
+    },
+    {
+      "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+      "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+      "strategy_name": "llm_ready_native",
+      "total_chunks": 22,
+      "chunk_type_distribution": {
+        "native_page": 4,
+        "title": 1,
+        "text": 4,
+        "table": 13
+      },
+      "avg_char_len": 343.32,
+      "min_char_len": 5,
+      "max_char_len": 1097,
+      "page_coverage": [
+        1
+      ],
+      "page_coverage_count": 1,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": []
+    }
+  ]
+}

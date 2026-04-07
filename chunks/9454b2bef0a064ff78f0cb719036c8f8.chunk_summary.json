@@ -1,0 +1,50 @@
+{
+  "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+  "filename": "DS투자증권 시황분석 리포트.pdf",
+  "strategies": [
+    {
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "strategy_name": "text_first_with_visual_support",
+      "total_chunks": 5,
+      "chunk_type_distribution": {
+        "block_group": 2,
+        "text": 3
+      },
+      "avg_char_len": 373.6,
+      "min_char_len": 43,
+      "max_char_len": 892,
+      "page_coverage": [
+        1
+      ],
+      "page_coverage_count": 1,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": []
+    },
+    {
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "strategy_name": "llm_ready_native",
+      "total_chunks": 27,
+      "chunk_type_distribution": {
+        "native_page": 7,
+        "text": 9,
+        "table": 10,
+        "image": 1
+      },
+      "avg_char_len": 705.26,
+      "min_char_len": 15,
+      "max_char_len": 1242,
+      "page_coverage": [
+        1
+      ],
+      "page_coverage_count": 1,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": []
+    }
+  ]
+}

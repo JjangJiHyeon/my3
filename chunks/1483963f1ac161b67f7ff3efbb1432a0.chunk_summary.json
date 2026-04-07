@@ -1,0 +1,102 @@
+{
+  "doc_id": "1483963f1ac161b67f7ff3efbb1432a0",
+  "filename": "미래에셋증권 1분기 실적보고서.pdf",
+  "strategies": [
+    {
+      "doc_id": "1483963f1ac161b67f7ff3efbb1432a0",
+      "filename": "미래에셋증권 1분기 실적보고서.pdf",
+      "strategy_name": "text_first_with_visual_support",
+      "total_chunks": 29,
+      "chunk_type_distribution": {
+        "text": 20,
+        "block_group": 9
+      },
+      "avg_char_len": 99.07,
+      "min_char_len": 30,
+      "max_char_len": 704,
+      "page_coverage": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "page_coverage_count": 17,
+      "sparse_page_chunk_count": 13,
+      "sparse_page_ratio": 0.4483,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": [
+        "sparse_page:1",
+        "empty_page_no_chunk:1",
+        "sparse_page:2",
+        "sparse_page:3",
+        "sparse_page:7",
+        "sparse_page:8",
+        "sparse_page:12",
+        "sparse_page:13",
+        "sparse_page:14",
+        "sparse_page:15",
+        "sparse_page:17",
+        "sparse_page:18",
+        "sparse_page:19",
+        "empty_page_no_chunk:19"
+      ]
+    },
+    {
+      "doc_id": "1483963f1ac161b67f7ff3efbb1432a0",
+      "filename": "미래에셋증권 1분기 실적보고서.pdf",
+      "strategy_name": "llm_ready_native",
+      "total_chunks": 63,
+      "chunk_type_distribution": {
+        "native_page": 17,
+        "text": 31,
+        "title": 7,
+        "chart": 2,
+        "table": 1,
+        "image": 5
+      },
+      "avg_char_len": 73.95,
+      "min_char_len": 4,
+      "max_char_len": 409,
+      "page_coverage": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "page_coverage_count": 17,
+      "sparse_page_chunk_count": 0,
+      "sparse_page_ratio": 0.0,
+      "empty_retrieval_text_chunks": 0,
+      "top_issues": [
+        "empty_llm_ready_page:1",
+        "empty_llm_ready_page:19"
+      ]
+    }
+  ]
+}

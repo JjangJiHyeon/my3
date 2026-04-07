@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "run_id": "run_20260407_160510",
+  "created_at": "2026-04-07T16:05:10+09:00",
+  "models": {
+    "gpt_model": "gpt-5.2",
+    "embedding_model": "text-embedding-3-large"
+  },
+  "input": {
+    "chunks_dir": "C:\\Users\\jihyeon\\Desktop\\my3\\chunks",
+    "read_only_patterns": [
+      "*.text_first_with_visual_support.json",
+      "*.llm_ready_native.json",
+      "*.chunk_summary.json"
+    ],
+    "strategy_file_count": {
+      "text_first_with_visual_support": 8,
+      "llm_ready_native": 8
+    },
+    "expected_doc_count": 8
+  },
+  "output": {
+    "output_dir": "C:\\Users\\jihyeon\\Desktop\\my3\\chunk_eval_runs",
+    "run_dir": "C:\\Users\\jihyeon\\Desktop\\my3\\chunk_eval_runs\\run_20260407_160510",
+    "files": [
+      "run_manifest.json",
+      "chunk_strategy_metrics.json",
+      "chunk_strategy_metrics.csv",
+      "chunk_strategy_comparison.md",
+      "doc_level_chunk_summary.json"
+    ]
+  },
+  "notes": [
+    "OPENAI_API_KEY is not read by this offline quality check.",
+    "Existing chunks/*.json files are treated as read-only inputs.",
+    "No document, company, quarter, or test-document-specific logic is used."
+  ]
+}

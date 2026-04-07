@@ -435,7 +435,12 @@ def normalize_table_candidate(
 
     rows = []
     
-    if source_type in ("camelot", "pdfplumber"):
+    if isinstance(candidate_data, dict) and candidate_data.get("rows"):
+        rows = candidate_data.get("rows") or []
+        obj["source"] = candidate_data.get("source") or source_type
+        if candidate_data.get("title"):
+            obj["title"] = candidate_data.get("title")
+    elif source_type in ("camelot", "pdfplumber"):
         rows = candidate_data
     else:
         if isinstance(candidate_data, str):

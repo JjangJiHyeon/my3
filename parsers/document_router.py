@@ -128,11 +128,13 @@ def _page_feature_bundle(
     debug = page.get("parser_debug", {}) or {}
     block_type_counts = debug.get("block_type_counts", {}) or {}
     candidate_counts = debug.get("candidate_counts", {}) or {}
-    page_type = debug.get("page_type", "unknown")
-    layout_hint = debug.get("page_layout_hint", "unknown")
-
     page_width = float(page.get("page_width", 0) or 0)
     page_height = float(page.get("page_height", 0) or 0)
+    is_landscape = page_width > 0 and page_height > 0 and page_width > page_height * 1.05
+    page_type = debug.get("page_type", "unknown")
+    layout_hint = debug.get("page_layout_hint") or debug.get("preferred_layout_hint") or "unknown"
+    if layout_hint == "unknown" and is_landscape:
+        layout_hint = "slide_like"
     block_count = int(candidate_counts.get("final_blocks", len(blocks)))
     image_blocks = sum(1 for block in blocks if block.get("type") in ("image", "chart", "drawing"))
     table_blocks = sum(1 for block in blocks if block.get("type") == "table")
@@ -142,6 +144,12 @@ def _page_feature_bundle(
     title_chars = sum(len(str(block.get("text", "") or "").strip()) for block in title_blocks)
     numeric_chars = len(re.findall(r"\d", compact_text)) + text.count("%")
     image_or_drawing_count = max(int(page.get("image_count", 0) or 0), image_blocks)
+
+    # NEW: structural signals
+    tiny_text_blocks = sum(1 for block in text_blocks if len(str(block.get("text", "") or "").strip()) < 15)
+    long_paragraphs = sum(1 for block in text_blocks if len(str(block.get("text", "") or "").strip().split("\n")) >= 3)
+    visual_fragment_ratio = _safe_div(image_blocks + tiny_text_blocks, max(1, block_count))
+    paragraph_continuity = _safe_div(long_paragraphs, max(1, len(text_blocks)))
 
     table_candidate_count = len(page.get("tables", []) or []) + table_blocks
     for block in blocks:
@@ -167,9 +175,12 @@ def _page_feature_bundle(
         "title_ratio": title_ratio,
         "repeated_header_footer_ratio": 1.0 if page_index in repeated_signature_pages else 0.0,
         "block_count": float(block_count),
-        "landscape": 1.0 if page_width > 0 and page_height > 0 and page_width > page_height * 1.05 else 0.0,
+        "landscape": 1.0 if is_landscape else 0.0,
+        "landscape_ratio": 1.0 if is_landscape else 0.0,
         "visual_block_count": float(image_blocks + table_blocks),
         "text_block_count": float(len(text_blocks)),
+        "visual_fragment_ratio": visual_fragment_ratio,
+        "paragraph_continuity": paragraph_continuity,
         "block_type_counts": block_type_counts,
     }
 
@@ -189,24 +200,33 @@ def _score_page(features: dict[str, Any]) -> dict[str, float]:
     dashboard_hint = 1.0 if features["page_type_hint"] == "dashboard_kpi_like" else 0.0
     table_hint = 1.0 if features["page_type_hint"] == "appendix_or_table_heavy" else 0.0
     report_fit = 1.0 - _clamp(abs(features["estimated_column_count"] - 1.5) / 1.5)
+    ppt_export_like = 1.0 if (
+        features["landscape"] >= 1.0
+        and features["visual_fragment_ratio"] >= 0.75
+        and features["paragraph_continuity"] <= 0.15
+    ) else 0.0
 
     return {
         "slide_ir": (
-            0.24 * image_norm
-            + 0.18 * title_norm
-            + 0.16 * (1.0 - text_norm)
-            + 0.14 * (1.0 - column_norm)
-            + 0.12 * slide_hint
-            + 0.08 * landscape_norm
+            0.18 * image_norm
+            + 0.15 * title_norm
+            + 0.10 * (1.0 - text_norm)
+            + 0.10 * (1.0 - column_norm)
+            + 0.10 * slide_hint
+            + 0.10 * features["visual_fragment_ratio"]
+            + 0.12 * landscape_norm
+            + 0.12 * ppt_export_like
             + 0.08 * (1.0 - repeated_norm)
+            - 0.15 * text_norm # Penalty for being TOO dense for a typical Slide
         ),
         "text_report": (
-            0.32 * text_norm
-            + 0.18 * (1.0 - table_norm)
-            + 0.14 * (1.0 - image_norm)
-            + 0.14 * repeated_norm
-            + 0.12 * report_fit
-            + 0.10 * (1.0 - numeric_norm)
+            0.35 * text_norm # Increased weight
+            + 0.20 * features["paragraph_continuity"]
+            + 0.12 * (1.0 - table_norm)
+            + 0.12 * repeated_norm
+            + 0.10 * report_fit
+            + 0.08 * (1.0 - image_norm)
+            + 0.08 * (1.0 - numeric_norm)
         ),
         "dashboard_brief": (
             0.24 * numeric_norm
@@ -215,6 +235,7 @@ def _score_page(features: dict[str, Any]) -> dict[str, float]:
             + 0.14 * column_norm
             + 0.12 * dashboard_hint
             + 0.10 * (1.0 - repeated_norm)
+            - 0.16 * ppt_export_like
         ),
         "table_heavy": (
             0.36 * table_norm
@@ -438,6 +459,8 @@ def _route_from_pages(
         "repeated_header_footer_ratio": round(aggregate_features["repeated_header_footer_ratio"], 3),
         "avg_block_count": round(aggregate_features["avg_block_count"], 1),
         "landscape_ratio": round(aggregate_features["landscape_ratio"], 2),
+        "visual_fragment_ratio": round(sum(s["features"]["visual_fragment_ratio"] for s in page_summaries) / page_count, 3),
+        "paragraph_continuity": round(sum(s["features"]["paragraph_continuity"] for s in page_summaries) / page_count, 3),
         "page_type_distribution": page_type_distribution,
         "page_type_distribution_ratio": {key: round(value, 3) for key, value in page_type_distribution_ratio.items()},
         "parser_page_type_distribution": parser_page_type_distribution,
@@ -508,7 +531,13 @@ def pre_route_document(doc: fitz.Document) -> str:
                 "image_count": image_count,
                 "page_width": float(page.rect.width),
                 "page_height": float(page.rect.height),
-                "parser_debug": {},
+                "parser_debug": {
+                    "preferred_layout_hint": (
+                        "slide_like"
+                        if page.rect.width > page.rect.height * 1.05
+                        else "unknown"
+                    )
+                },
             })
         except Exception as exc:
             logger.debug("Pre-route sampling failed on page %s: %s", page_idx + 1, exc)

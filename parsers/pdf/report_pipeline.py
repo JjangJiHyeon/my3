@@ -11,11 +11,35 @@ def process_text_report(doc, page_idx, plumber_tables):
     """
     page = doc[page_idx]
     pw, ph = page.rect.width, page.rect.height
-    raw = page.get_text("dict") or {}
+    
+    # NEW: Try pdf4llm first for text-rich reports
+    text_source = "pymupdf_report_native"
+    pdf4llm_success = False
+    pdf4llm_error = None
+    
+    try:
+        import pymupdf4llm
+        # get_text("markdown") is available in newer PyMuPDF, 
+        # but pymupdf4llm.to_markdown is the dedicated wrapper.
+        md_text = pymupdf4llm.to_markdown(doc, pages=[page_idx])
+        if md_text and len(md_text.strip()) > 50:
+            text_blocks = _extract_report_text_blocks_from_md(md_text, page_idx, pw, ph)
+            text_source = "pdf4llm"
+            pdf4llm_success = True
+        else:
+            raw = page.get_text("dict") or {}
+            text_blocks = _extract_report_text_blocks(raw, page_idx, pw, ph)
+    except ImportError:
+        pdf4llm_error = "pymupdf4llm_not_installed"
+        raw = page.get_text("dict") or {}
+        text_blocks = _extract_report_text_blocks(raw, page_idx, pw, ph)
+    except Exception as e:
+        pdf4llm_error = str(e)
+        raw = page.get_text("dict") or {}
+        text_blocks = _extract_report_text_blocks(raw, page_idx, pw, ph)
 
-    text_blocks = _extract_report_text_blocks(raw, page_idx, pw, ph)
     table_blocks = _build_report_table_blocks(plumber_tables, page_idx, pw, ph)
-    visual_blocks = _extract_report_visual_blocks(raw, page_idx, pw, ph)
+    visual_blocks = _extract_report_visual_blocks(page.get_text("dict") or {}, page_idx, pw, ph)
     _attach_caption_context(text_blocks, table_blocks)
     _attach_visual_caption_context(text_blocks, visual_blocks)
 
@@ -33,8 +57,49 @@ def process_text_report(doc, page_idx, plumber_tables):
             "block_count": len(blocks),
             "preferred_layout_hint": preferred_layout_hint,
             "report_signals": ["paragraph_native_blocks", "caption_table_linking"],
+            "report_text_source": text_source,
+            "pdf4llm_attempted": True,
+            "pdf4llm_success": pdf4llm_success,
+            "pdf4llm_fallback_reason": pdf4llm_error,
         },
     }
+
+
+def _extract_report_text_blocks_from_md(md_text: str, page_idx: int, pw: float, ph: float) -> list[dict]:
+    """Basic conversion of markdown paragraphs to block schema."""
+    blocks: list[dict] = []
+    # Simple split by double newline for paragraphs
+    paragraphs = [p.strip() for p in md_text.split("\n\n") if p.strip()]
+    
+    for i, p in enumerate(paragraphs):
+        # Determine type based on markdown markers
+        btype = "text"
+        role = "body_text"
+        if p.startswith("#"):
+            btype = "title"
+            role = "section_title"
+        
+        # Since pdf4llm (to_markdown) doesn't easily give bboxes per block,
+        # we assign a safe fallback bbox that spans the page width
+        # and estimated vertical position
+        est_y = (i / max(1, len(paragraphs))) * ph
+        bbox = [pw * 0.05, est_y, pw * 0.95, est_y + 20]
+        
+        blocks.append({
+            "id": f"p{page_idx+1}_md{i}",
+            "type": btype,
+            "bbox": bbox,
+            "text": p,
+            "source": "pdf4llm",
+            "confidence": 0.9,
+            "meta": {
+                "report_role": role,
+                "summary_priority": "high" if btype == "title" else "medium",
+                "summary_exclude": False,
+                "column_hint": 0, # md is usually single stream
+            },
+        })
+    return blocks
 
 
 def _extract_report_text_blocks(raw: dict, page_idx: int, pw: float, ph: float) -> list[dict]:

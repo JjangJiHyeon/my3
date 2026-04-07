@@ -22,6 +22,7 @@ import base64
 import io
 import logging
 import os
+import re
 import uuid
 from typing import Any
 
@@ -144,6 +145,14 @@ def parse_pdf(filepath: str) -> dict[str, Any]:
     empty_pages = sum(1 for p in pages if not p.get("blocks"))
     quality = _assess_quality(pages, ocr_page_nums, empty_pages)
 
+    # NEW: Aggregate extraction source stats
+    source_stats = {
+        "pdf4llm_pages": sum(1 for p in pages if p.get("parser_debug", {}).get("report_text_source") == "pdf4llm"),
+        "ppt_recovery_pages": sum(1 for p in pages if p.get("parser_debug", {}).get("chosen_text_source") == "ppt_export_native"),
+        "ocr_skipped_pages": sum(1 for p in pages if p.get("parser_debug", {}).get("ocr_skipped_due_to_native_recovery")),
+        "native_pages": sum(1 for p in pages if p.get("parser_debug", {}).get("chosen_text_source") == "native"),
+    }
+
     mismatch = (refined_doc_type != doc_type_from_pipeline)
 
     metadata.update({
@@ -160,7 +169,8 @@ def parse_pdf(filepath: str) -> dict[str, Any]:
         "routing_reasons": routing_reasons,
         "routing_signals": final_routing.get("routing_signals"),
         "routing_reason": final_routing.get("routing_reason"),
-        "routing_mismatch_flag": mismatch
+        "routing_mismatch_flag": mismatch,
+        "extraction_source_stats": source_stats,
     })
     
     if fallback_reason:
@@ -270,8 +280,14 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
     consolidated_text = "\n\n".join(b["text"] for b in valid_blocks if b.get("text") and b["type"] != "footer")
     image_block_count = sum(1 for b in valid_blocks if b["type"] in ("image", "chart"))
     page_result["ocr_applied"] = False
+    modular_ocr_allowed = True
+    if pipeline_used == "slide_ir_pipeline":
+        chosen_source = dbg.get("chosen_text_source")
+        if chosen_source in ("native", "native_salvage", "ppt_export_native") and len(consolidated_text) >= 40:
+            modular_ocr_allowed = False
+            dbg["ocr_fallback_skipped_reason"] = "slide_structured_native_text_present"
 
-    if len(consolidated_text) < OCR_TEXT_THRESHOLD and image_block_count >= OCR_IMAGE_MIN:
+    if modular_ocr_allowed and len(consolidated_text) < OCR_TEXT_THRESHOLD and image_block_count >= OCR_IMAGE_MIN:
         try:
             from .ocr_utils import run_ocr_on_image
             mat = fitz.Matrix(2.0, 2.0)
@@ -300,10 +316,24 @@ def _finalize_page_results(doc: fitz.Document, page_result: dict, page_idx: int,
         except Exception as ocr_exc:
             dbg["ocr_fallback_error"] = str(ocr_exc)
 
+    if page_result.get("ocr_applied"):
+        valid_blocks, actual_strategy, strategy_basis = _sort_reading_order(valid_blocks, layout_hint, pw, ph)
+        dbg["reading_order_strategy"] = f"{actual_strategy}+post_ocr"
+        dbg["reading_order_basis"] = strategy_basis
+
+    valid_blocks, page_rag_structure = _apply_page_level_rag_structure(valid_blocks, ph)
+    page_result["blocks"] = valid_blocks
+    page_result["page_title"] = page_rag_structure.get("page_title", "")
+    dbg["page_rag_structure"] = page_rag_structure
+
+    consolidated_text = "\n\n".join(
+        b["text"] for b in valid_blocks
+        if b.get("text") and b["type"] != "footer"
+    )
     page_result["text"] = consolidated_text
 
     # RAG-Ready Text Stream Generation
-    rag_text = _generate_rag_text(valid_blocks)
+    rag_text = _generate_rag_text(valid_blocks, page_title=page_result.get("page_title"))
     page_result["rag_text"] = rag_text
     
     # Extract tables for router
@@ -349,8 +379,22 @@ def _enrich_table_blocks(blocks: list[dict], pw: float, ph: float, quality_notes
             or meta.get("normalized_table_rows")
             or block.get("text", "")
         )
-        norm_tbl = normalize_table_candidate(raw_data, source_type, block.get("text"))
+        structured_fallback = bool(meta.get("table_summary") or meta.get("key_value_rows") or meta.get("table_markdown"))
+        if isinstance(raw_data, dict) and raw_data.get("rows"):
+            norm_tbl = raw_data
+            norm_tbl.setdefault("source", source_type)
+            norm_tbl.setdefault("headers", norm_tbl.get("rows", [[]])[0] if norm_tbl.get("rows") else [])
+            norm_tbl.setdefault("shape", {
+                "rows": len(norm_tbl.get("rows", [])),
+                "cols": max((len(r) for r in norm_tbl.get("rows", []) if isinstance(r, list)), default=0),
+            })
+            norm_tbl.setdefault("markdown", meta.get("table_markdown", ""))
+        else:
+            norm_tbl = normalize_table_candidate(raw_data, source_type, block.get("text"))
         quality_score = score_table_quality(norm_tbl)
+        if structured_fallback and norm_tbl.get("rows"):
+            quality_score = max(quality_score, 0.75)
+            norm_tbl.setdefault("quality", {})["structured_fallback_preserved"] = True
 
         reject_signals = meta.setdefault("table_reject_signals", [])
         for reason in norm_tbl.get("reject_signals", []):
@@ -367,7 +411,7 @@ def _enrich_table_blocks(blocks: list[dict], pw: float, ph: float, quality_notes
             "long_text_dump_table",
             "mostly_empty_cells",
         }
-        if block["type"] == "table" and (quality_score < 0.5 or any(reason in severe_rejects for reason in reject_signals)):
+        if block["type"] == "table" and not structured_fallback and (quality_score < 0.5 or any(reason in severe_rejects for reason in reject_signals)):
             block["type"] = "unknown"
             meta["classification_reason"] = "low_quality_table_candidate"
             rejected_candidate_count += 1
@@ -838,6 +882,9 @@ def _merge_slide_cards(blocks: list[dict], merge_events: list) -> list[dict]:
             
             meta1, meta2 = current.get("meta", {}), b2.get("meta", {})
             r_1, r_2 = meta1.get("slide_role"), meta2.get("slide_role")
+            p_1, p_2 = meta1.get("slide_panel_id"), meta2.get("slide_panel_id")
+            if p_1 and p_2 and p_1 != p_2:
+                continue
             
             # 1. Title + Bullet merging (x_diff within 40, small y gap)
             if current["type"] == "title" and r_2 == "bullet_item" and -10 <= y_gap <= 25 and x_diff < 40:
@@ -846,13 +893,13 @@ def _merge_slide_cards(blocks: list[dict], merge_events: list) -> list[dict]:
                 is_same_card = True
                 
             # 2. KPI merging (Label + Value etc)
-            elif (r_1 == "kpi_metric" or r_2 == "kpi_metric") and -10 <= y_gap <= 30 and x_diff < 50:
+            elif (r_1 in ("kpi_metric", "kpi_group") or r_2 in ("kpi_metric", "kpi_group")) and -10 <= y_gap <= 30 and x_diff < 50:
                 is_same_card = True
                 
             # 3. Same slide_role body fragments only (avoid cross-column merges)
             elif (
                 r_1 == r_2
-                and r_1 in ("body_note", "bullet_item", "kpi_metric")
+                and r_1 in ("body_note", "bullet_item", "kpi_metric", "kpi_group")
                 and -5 <= y_gap <= 12
                 and x_diff < 15
             ):
@@ -968,12 +1015,24 @@ def _sort_reading_order(blocks: list[dict], hint: str, pw: float, ph: float) -> 
         return blocks_sorted, strategy, basis
         
     elif hint == "slide_like":
-        strategy = "slide_title_priority"
-        basis = "title first, then absolute vertical sort"
-        blocks_sorted = sorted(blocks, key=lambda b: (
-            0 if b["type"] == "title" else 1,
-            b["bbox"][1]
-        ))
+        has_panel_order = any("slide_panel_order" in (b.get("meta") or {}) for b in blocks)
+        if has_panel_order:
+            strategy = "slide_panel_aware"
+            basis = "panel order from slide postprocess, then local y/x order"
+            blocks_sorted = sorted(blocks, key=lambda b: (
+                0 if b["type"] == "title" else 2 if b["type"] == "footer" else 1,
+                (b.get("meta") or {}).get("slide_panel_order", 500),
+                (b.get("meta") or {}).get("slide_reading_order", 999999),
+                b["bbox"][1],
+                b["bbox"][0],
+            ))
+        else:
+            strategy = "slide_title_priority"
+            basis = "title first, then absolute vertical sort"
+            blocks_sorted = sorted(blocks, key=lambda b: (
+                0 if b["type"] == "title" else 1,
+                b["bbox"][1]
+            ))
         return blocks_sorted, strategy, basis
         
     # single_column / mixed
@@ -1177,53 +1236,615 @@ def _classify_page_type(page_text: str, blocks: list[dict], pw: float, ph: float
     signals.append("classified:text_heavy")
     return "text_heavy", signals
 
-def _generate_rag_text(blocks: list[dict]) -> str:
-    """Generate a clean, concatenated text stream optimized for LLM RAG/Summary."""
-    parts = []
-    for b in blocks:
-        btype = b["type"]
-        text = b.get("text", "").strip()
-        
-        if btype == "footer" or not text:
-            continue
-            
-        if btype == "title":
-            parts.append(f"\n[SECTION: {text}]\n")
-        elif btype == "text":
-            parts.append(text)
-        elif btype == "table":
-            # Table Summary Logic
-            table_data = b.get("meta", {}).get("normalized_table", [])
-            if isinstance(table_data, dict):
-                table_rows = table_data.get("rows", [])
-            else:
-                table_rows = table_data
-            if table_rows:
-                rows = len(table_rows)
-                cols = len(table_rows[0]) if rows > 0 else 0
-                
-                # Extract first 2 rows for context (headers often here)
-                header_context = []
-                for r in range(min(2, rows)):
-                    row_cells = [str(c).strip() if c else "" for c in table_rows[r]]
-                    header_context.append(" | ".join(row_cells))
-                
-                sum_str = f"\n[TABLE: {rows} rows, {cols} columns]\n"
-                if header_context:
-                    sum_str += "[Table Headers/Start: " + " / ".join(header_context) + "]\n"
-                parts.append(sum_str)
-            else:
-                parts.append("\n[TABLE: (No structured data extracted)]\n")
-        elif btype in ("image", "chart"):
-            caption = b.get("meta", {}).get("caption_text", "")
-            if caption:
-                parts.append(f"\n[VISUAL: {caption}]\n")
-            else:
-                parts.append(f"\n[VISUAL: {btype.upper()} at {b['bbox']}]\n")
-        elif btype == "unknown" and text:
-            parts.append(f"\n[NOTE: {text[:500]}]\n")
+def _rag_clean_text(value: Any, limit: int | None = None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple)):
+        value = " ".join(str(v) for v in value if v is not None)
+    text = str(value).replace("\x00", " ")
+    text = re.sub(r"[ \t\r\f\v]+", " ", text)
+    text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+    if limit and len(text) > limit:
+        return text[:limit].rstrip() + "..."
+    return text
 
-    return "\n\n".join(parts).strip()
+
+def _rag_normalize_key(text: str) -> str:
+    return "".join(ch for ch in str(text).lower() if ch.isalnum())
+
+
+def _rag_is_duplicate(text: str, seen_keys: set[str], threshold: float = 0.92) -> bool:
+    key = _rag_normalize_key(text)
+    if not key:
+        return True
+    if key in seen_keys:
+        return True
+    for old in seen_keys:
+        if len(key) >= 18 and len(old) >= 18 and (key in old or old in key):
+            return True
+        if len(key) >= 30 and len(old) >= 30 and difflib.SequenceMatcher(None, key, old).ratio() >= threshold:
+            return True
+    return False
+
+
+def _rag_mark_seen(text: str, seen_keys: set[str]) -> None:
+    key = _rag_normalize_key(text)
+    if key:
+        seen_keys.add(key)
+
+
+def _rag_strip_report_prefix(text: str) -> str:
+    clean = _rag_clean_text(text)
+    stripped = re.sub(r"^(20\d{2}년[^\s]{0,24}?보고서)+", "", clean).strip()
+    return stripped if len(stripped) >= 3 else clean
+
+
+def _rag_focus_quarter_heading(text: str) -> str:
+    match = re.search(r"\[[1-4]Q20\d{2}\].*", text)
+    if not match or match.start() <= 0:
+        return text
+    prefix = text[:match.start()]
+    metricish = sum(1 for ch in prefix if ch.isdigit() or ch in "%()., ")
+    if metricish >= max(3, int(len(prefix) * 0.35)):
+        return text[match.start():].strip()
+    return text
+
+
+def _rag_compact_title(text: str, limit: int = 140) -> str:
+    clean = _rag_focus_quarter_heading(_rag_strip_report_prefix(text))
+    if not clean or _has_disclaimer_context(clean):
+        return ""
+    return _rag_clean_text(clean, limit)
+
+
+def _rag_compact_body_text(text: str, limit: int = 700) -> str:
+    clean = _rag_focus_quarter_heading(_rag_strip_report_prefix(text))
+    if not clean or _has_disclaimer_context(clean):
+        return ""
+    return _rag_clean_text(clean, limit)
+
+
+def _rag_metric_tokens(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        raw_tokens = re.split(r"[,;|\s]+", value)
+    elif isinstance(value, (list, tuple)):
+        raw_tokens = [str(v) for v in value]
+    else:
+        raw_tokens = [str(value)]
+
+    out: list[str] = []
+    seen: set[str] = set()
+    for token in raw_tokens:
+        t = _rag_clean_text(token).strip(" ,;")
+        if not t:
+            continue
+        compact = t.replace(",", "")
+        if re.fullmatch(r"20[0-3]\d년?", compact):
+            continue
+        if re.fullmatch(r"[1-4](?:q|Q|분기)?", compact) or re.fullmatch(r"(?:q|Q)[1-4]", compact):
+            continue
+        if compact in {"24", "25", "2024", "2025"}:
+            continue
+        if len(compact) >= 5 and "2025" in compact and "%" not in compact and "." not in compact:
+            continue
+        if not (re.search(r"\d", compact) and ("%" in compact or "." in compact or len(compact) >= 2)):
+            continue
+        key = compact.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(t)
+        if len(out) >= 12:
+            break
+    return out
+
+
+def _rag_split_visual_summary_line(line: str) -> tuple[str, str]:
+    if ":" not in line:
+        return "", _rag_clean_text(line)
+    prefix, value = line.split(":", 1)
+    return prefix.strip().lower().replace(" ", "_"), _rag_clean_text(value)
+
+
+def _rag_context_duplicate(text: str, contexts: list[str]) -> bool:
+    key = _rag_normalize_key(text)
+    if not key:
+        return True
+    for ctx in contexts:
+        ctx_key = _rag_normalize_key(ctx)
+        if not ctx_key:
+            continue
+        if len(key) >= 8 and (key in ctx_key or ctx_key in key):
+            return True
+        if len(key) >= 12 and len(ctx_key) >= 12 and difflib.SequenceMatcher(None, key, ctx_key).ratio() >= 0.90:
+            return True
+    return False
+
+
+def _rag_clean_visual_summary(block: dict, context_texts: list[str] | None = None) -> str:
+    meta = block.get("meta", {}) or {}
+    btype = block.get("type")
+    raw = meta.get("chart_summary") or meta.get("visual_summary") or meta.get("caption_text") or ""
+    raw = _rag_clean_text(raw, 1200)
+    block_text = _rag_clean_text(block.get("text", ""), 400)
+    context_texts = list(context_texts or [])
+    assoc_title = _rag_clean_text(meta.get("associated_title", ""), 240)
+    if assoc_title:
+        context_texts.append(assoc_title)
+
+    if not raw:
+        return ""
+    if meta.get("summary_exclude") and not block_text:
+        return ""
+    if _has_disclaimer_context(raw, assoc_title) or _has_toc_context(raw) and not block_text:
+        return ""
+
+    metrics = _rag_metric_tokens(meta.get("visible_key_metrics"))
+    lines: list[str] = []
+    seen_local: set[str] = set()
+    saw_informative_line = False
+
+    for raw_line in raw.splitlines():
+        prefix, value = _rag_split_visual_summary_line(raw_line)
+        if not value:
+            continue
+        if prefix in {"title", "context"}:
+            segments = [seg.strip() for seg in re.split(r"\s*/\s*", value) if seg.strip()]
+            kept_segments = [seg for seg in segments if not _rag_context_duplicate(seg, context_texts)]
+            if not kept_segments:
+                continue
+            value = _rag_clean_text(" / ".join(kept_segments), 360)
+            if not value:
+                continue
+            label = "related_title" if prefix == "title" else "context"
+            line = f"{label}: {value}"
+        elif prefix == "visible_metrics":
+            line_metrics = metrics or _rag_metric_tokens(value)
+            if len(line_metrics) < 2:
+                continue
+            line = "visible_metrics: " + ", ".join(line_metrics[:12])
+        else:
+            line = _rag_clean_text(raw_line, 500)
+            saw_informative_line = True
+
+        if _rag_is_duplicate(line, seen_local, threshold=0.98):
+            continue
+        _rag_mark_seen(line, seen_local)
+        lines.append(line)
+
+    if not lines:
+        prefixed_lines = [_rag_split_visual_summary_line(line)[0] for line in raw.splitlines() if line.strip()]
+        if prefixed_lines and all(p in {"title", "context", "visible_metrics"} for p in prefixed_lines):
+            return ""
+        if not _rag_context_duplicate(raw, context_texts):
+            return _rag_clean_text(raw, 500)
+        return ""
+
+    area_ratio = meta.get("visual_area_ratio")
+    try:
+        area_ratio_float = float(area_ratio)
+    except (TypeError, ValueError):
+        area_ratio_float = 0.0
+
+    priority = str(meta.get("summary_priority") or "").lower()
+    only_generic_lines = not saw_informative_line and all(
+        line.startswith(("related_title:", "context:", "visible_metrics:")) for line in lines
+    )
+    if not block_text and only_generic_lines:
+        if priority == "low":
+            return ""
+        if area_ratio_float and area_ratio_float < 0.015 and len(metrics) < 3:
+            return ""
+        if btype == "image" and len(metrics) < 3:
+            return ""
+
+    return "\n".join(lines)
+
+
+def _rag_table_rows(meta: dict) -> list[list[Any]]:
+    table_data = meta.get("normalized_table") or meta.get("normalized_table_rows") or meta.get("rows") or []
+    if isinstance(table_data, dict):
+        return table_data.get("rows", []) or []
+    return table_data if isinstance(table_data, list) else []
+
+
+def _rag_format_table(block: dict) -> str:
+    meta = block.get("meta", {}) or {}
+    table_summary = _rag_clean_text(meta.get("table_summary"), 1000)
+    table_md = _rag_clean_text(meta.get("table_markdown"), 1800)
+    key_values = meta.get("key_value_rows")
+    parts: list[str] = []
+
+    if table_summary:
+        parts.append(f"[TABLE SUMMARY]\n{table_summary}")
+    if key_values and isinstance(key_values, list):
+        kv_lines = []
+        for row in key_values[:12]:
+            if not isinstance(row, dict):
+                continue
+            item = _rag_clean_text(row.get("item"), 120)
+            values = _rag_clean_text(row.get("values") or row.get("value"), 180)
+            if item and values:
+                kv_lines.append(f"- {item}: {values}")
+        if kv_lines:
+            parts.append("[TABLE KEY VALUES]\n" + "\n".join(kv_lines))
+    if table_md:
+        parts.append(f"[TABLE]\n{table_md}")
+    if parts:
+        return "\n\n".join(parts)
+
+    rows = _rag_table_rows(meta)
+    if rows:
+        row_count = len(rows)
+        col_count = max((len(r) for r in rows if isinstance(r, list)), default=0)
+        preview_rows = []
+        for row in rows[:3]:
+            if isinstance(row, list):
+                preview_rows.append(" | ".join(_rag_clean_text(cell, 80) for cell in row))
+        detail = f"{row_count} rows, {col_count} columns"
+        if preview_rows:
+            detail += "\n" + "\n".join(preview_rows)
+        return f"[TABLE]\n{detail}"
+
+    text = _rag_clean_text(block.get("text", ""), 500)
+    return f"[TABLE]\n{text}" if text else ""
+
+
+def _rag_add_part(parts: list[str], label: str, text: str, seen_keys: set[str], context_texts: list[str]) -> bool:
+    clean = _rag_clean_text(text)
+    if not clean or _rag_is_duplicate(clean, seen_keys):
+        return False
+    _rag_mark_seen(clean, seen_keys)
+    context_texts.append(clean)
+    parts.append(f"[{label}]\n{clean}")
+    return True
+
+
+def _rag_priority_rank(block: dict) -> int:
+    meta = block.get("meta", {}) or {}
+    priority = str(meta.get("summary_priority") or "").lower()
+    if priority == "high":
+        return 3
+    if priority == "medium":
+        return 2
+    if priority == "low":
+        return 0
+    return 1
+
+
+def _rag_panel_order(block: dict) -> int:
+    meta = block.get("meta", {}) or {}
+    for key in ("slide_panel_order", "panel_order", "reading_order", "slide_reading_order"):
+        value = meta.get(key)
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            continue
+    return 500
+
+
+def _rag_bbox_xy(block: dict) -> tuple[float, float]:
+    bbox = block.get("bbox") or [0, 0, 0, 0]
+    if len(bbox) < 2:
+        return 0.0, 0.0
+    return float(bbox[1] or 0), float(bbox[0] or 0)
+
+
+def _rag_has_structured_payload(block: dict) -> bool:
+    meta = block.get("meta", {}) or {}
+    if block.get("type") == "table":
+        return True
+    return bool(
+        meta.get("table_summary")
+        or meta.get("key_value_rows")
+        or meta.get("table_markdown")
+        or meta.get("chart_summary")
+        or meta.get("visual_summary")
+        or meta.get("caption_text")
+    )
+
+
+def _rag_meaningful_char_count(text: str) -> int:
+    return len(re.findall(r"[A-Za-z0-9가-힣]", text or ""))
+
+
+def _rag_is_weak_text_block(block: dict, text: str) -> bool:
+    meta = block.get("meta", {}) or {}
+    if not text:
+        return True
+    if block.get("type") == "footer" or meta.get("summary_exclude_reason") in {
+        "footer",
+        "disclaimer",
+        "date_metadata",
+        "contact_metadata",
+        "axis_label",
+    }:
+        return True
+    if _has_disclaimer_context(text):
+        return True
+    if _rag_priority_rank(block) >= 3:
+        return False
+    meaningful = _rag_meaningful_char_count(text)
+    has_metric = bool(re.search(r"\d|%|bp|p\)", text, flags=re.IGNORECASE))
+    if meaningful < 3 and not has_metric:
+        return True
+    if len(text) <= 5 and not has_metric and _rag_priority_rank(block) < 2:
+        return True
+    return False
+
+
+def _rag_title_candidate_score(block: dict, title: str, source: str, page_height: float) -> float:
+    meta = block.get("meta", {}) or {}
+    if not title or _has_disclaimer_context(title):
+        return -9999.0
+
+    btype = block.get("type")
+    role = str(meta.get("summary_role") or "")
+    slide_role = str(meta.get("slide_role") or "")
+    y0, _ = _rag_bbox_xy(block)
+    text_len = len(title)
+
+    score = 0.0
+    if source == "block_text":
+        if btype == "title":
+            score += 80
+        if role in {"title", "section_header"}:
+            score += 45
+        if slide_role == "title":
+            score += 45
+    elif source == "associated_title":
+        score += 45
+    elif source == "summary_title":
+        score += 35
+
+    score += _rag_priority_rank(block) * 8
+    panel_order = _rag_panel_order(block)
+    score += max(0, 20 - min(panel_order, 20))
+    if page_height > 0:
+        if y0 <= page_height * 0.22:
+            score += 12
+        elif y0 >= page_height * 0.82:
+            score -= 20
+    if 4 <= text_len <= 160:
+        score += 12
+    elif text_len > 240:
+        score -= 24
+    if btype == "footer" or meta.get("summary_exclude"):
+        score -= 80
+    return score
+
+
+def _rag_extract_summary_title(meta: dict) -> str:
+    raw = meta.get("chart_summary") or meta.get("visual_summary") or meta.get("caption_text") or ""
+    for raw_line in str(raw).splitlines():
+        prefix, value = _rag_split_visual_summary_line(raw_line)
+        if prefix == "title":
+            return value
+    return ""
+
+
+def _rag_select_page_title(blocks: list[dict], page_height: float = 0) -> tuple[str, dict[str, Any]]:
+    candidates: list[tuple[float, int, str, dict[str, Any]]] = []
+    for idx, block in enumerate(blocks):
+        meta = block.get("meta", {}) or {}
+        text = _rag_compact_title(block.get("text", ""), 180)
+        btype = block.get("type")
+        role = str(meta.get("summary_role") or "")
+        slide_role = str(meta.get("slide_role") or "")
+        priority_rank = _rag_priority_rank(block)
+
+        if text and (
+            btype == "title"
+            or role in {"title", "section_header"}
+            or slide_role == "title"
+            or (priority_rank >= 3 and btype == "text" and _rag_panel_order(block) <= 2)
+        ):
+            score = _rag_title_candidate_score(block, text, "block_text", page_height)
+            candidates.append((score, idx, text, {"source": "block_text", "block_id": block.get("id")}))
+
+        assoc = _rag_compact_title(meta.get("associated_title", ""), 180)
+        if assoc and _rag_has_structured_payload(block):
+            score = _rag_title_candidate_score(block, assoc, "associated_title", page_height)
+            candidates.append((score, idx, assoc, {"source": "associated_title", "block_id": block.get("id")}))
+
+        summary_title = _rag_compact_title(_rag_extract_summary_title(meta), 180)
+        if summary_title and _rag_has_structured_payload(block):
+            score = _rag_title_candidate_score(block, summary_title, "summary_title", page_height)
+            candidates.append((score, idx, summary_title, {"source": "summary_title", "block_id": block.get("id")}))
+
+    if not candidates:
+        return "", {"source": "none"}
+
+    score, idx, title, debug = max(candidates, key=lambda item: (item[0], -item[1]))
+    if score < 20:
+        return "", {"source": "none", "best_score": round(score, 2)}
+    debug.update({"score": round(score, 2), "candidate_index": idx})
+    return title, debug
+
+
+def _rag_block_summary_bucket(block: dict, selected_title_id: str | None = None) -> int:
+    meta = block.get("meta", {}) or {}
+    btype = block.get("type")
+    if selected_title_id and block.get("id") == selected_title_id:
+        return 0
+    if btype == "title" or meta.get("summary_role") == "title" or meta.get("slide_role") == "title":
+        return 1
+    if btype == "text":
+        text = _rag_compact_body_text(block.get("text", ""), 240)
+        if _rag_is_weak_text_block(block, text):
+            return 7
+        return 2
+    if btype == "table":
+        return 3
+    if btype in {"chart", "image"}:
+        return 4
+    if btype == "unknown":
+        return 6
+    if btype == "footer":
+        return 8
+    return 5
+
+
+def _rag_structure_order_key(block: dict, selected_title_id: str | None = None) -> tuple:
+    y0, x0 = _rag_bbox_xy(block)
+    return (
+        _rag_block_summary_bucket(block, selected_title_id),
+        _rag_panel_order(block),
+        -_rag_priority_rank(block),
+        y0,
+        x0,
+    )
+
+
+def _apply_page_level_rag_structure(
+    blocks: list[dict],
+    page_height: float = 0,
+) -> tuple[list[dict], dict[str, Any]]:
+    page_title, title_debug = _rag_select_page_title(blocks, page_height)
+    selected_title_id = title_debug.get("block_id")
+
+    ordered = sorted(blocks, key=lambda block: _rag_structure_order_key(block, selected_title_id))
+    for rag_order, block in enumerate(ordered):
+        meta = block.setdefault("meta", {})
+        text = _rag_clean_text(block.get("text", ""))
+        meta["rag_order"] = rag_order
+        meta["rag_bucket"] = _rag_block_summary_bucket(block, selected_title_id)
+        if page_title:
+            meta["page_title"] = page_title
+            if block.get("type") in {"table", "chart", "image"} and not _rag_clean_text(meta.get("associated_title", "")):
+                meta["associated_title"] = page_title
+        if _rag_has_structured_payload(block) and meta.get("summary_priority") != "low":
+            meta["summary_priority"] = "high" if block.get("type") == "table" else meta.get("summary_priority", "medium")
+        if block.get("type") in {"text", "title", "footer", "unknown"} and _rag_is_weak_text_block(block, text):
+            meta["rag_exclude"] = True
+            meta.setdefault("rag_exclude_reason", "weak_or_non_summary_text")
+        else:
+            meta.pop("rag_exclude", None)
+            meta.pop("rag_exclude_reason", None)
+
+    return ordered, {
+        "page_title": page_title,
+        "page_title_source": title_debug,
+        "rag_order_strategy": "page_title_body_table_visual_note",
+    }
+
+
+def _rag_body_group_key(block: dict, page_title: str) -> str:
+    meta = block.get("meta", {}) or {}
+    for key in ("associated_title", "slide_panel_id", "panel_id"):
+        value = _rag_clean_text(meta.get(key), 80)
+        if value:
+            return value
+    panel_order = meta.get("slide_panel_order") or meta.get("panel_order")
+    if panel_order is not None:
+        return f"panel:{panel_order}"
+    return page_title or "page"
+
+
+def _generate_rag_text(blocks: list[dict], page_title: str | None = None) -> str:
+    """Generate a clean text stream optimized for summary and RAG retrieval."""
+    titles: list[str] = []
+    body: list[str] = []
+    tables: list[str] = []
+    visuals: list[str] = []
+    notes: list[str] = []
+    seen_keys: set[str] = set()
+    context_texts: list[str] = []
+    page_title = _rag_compact_title(page_title or _rag_select_page_title(blocks)[0], 180)
+    ordered_blocks = sorted(blocks, key=lambda block: (
+        (block.get("meta", {}) or {}).get("rag_order", 999),
+        _rag_structure_order_key(block),
+    ))
+    has_structured_table = any((b.get("meta", {}) or {}).get("table_summary") or (b.get("meta", {}) or {}).get("table_markdown") for b in blocks)
+    pending_body_key = ""
+    pending_body_lines: list[str] = []
+
+    if page_title:
+        _rag_add_part(titles, "TITLE", page_title, seen_keys, context_texts)
+
+    def flush_body() -> None:
+        nonlocal pending_body_key, pending_body_lines
+        if pending_body_lines:
+            _rag_add_part(body, "BODY", "\n".join(pending_body_lines), seen_keys, context_texts)
+        pending_body_key = ""
+        pending_body_lines = []
+
+    for block in ordered_blocks:
+        btype = block.get("type")
+        text = _rag_clean_text(block.get("text", ""))
+        meta = block.get("meta", {}) or {}
+        priority = str(meta.get("summary_priority") or "").lower()
+        slide_role = str(meta.get("slide_role") or "")
+
+        if btype == "footer":
+            footer_note = _rag_compact_body_text(text, 220)
+            if footer_note and not _has_disclaimer_context(footer_note) and _rag_priority_rank(block) >= 2:
+                notes.append(f"[NOTE]\nfooter: {footer_note}")
+            continue
+        if meta.get("summary_exclude") and btype in ("image", "chart", "unknown", "footer"):
+            continue
+
+        if btype == "title":
+            title = _rag_compact_title(text)
+            if title and not meta.get("summary_exclude") and not _rag_context_duplicate(title, [page_title]):
+                flush_body()
+                _rag_add_part(titles, "TITLE", title, seen_keys, context_texts)
+            continue
+
+        if btype == "text":
+            body_text = _rag_compact_body_text(text, 700 if priority == "high" else 520)
+            if (
+                not body_text
+                or meta.get("summary_exclude")
+                or meta.get("rag_exclude")
+                or priority == "low"
+                or _rag_is_weak_text_block(block, body_text)
+            ):
+                continue
+            if page_title and _rag_context_duplicate(body_text, [page_title]) and len(body_text) <= len(page_title) + 20:
+                continue
+            if slide_role in {"offpage_text_stream", "kpi_group"} and has_structured_table and len(body_text) > 80:
+                flush_body()
+                _rag_add_part(notes, "NOTE", f"page text excerpt: {body_text[:360]}", seen_keys, context_texts)
+            else:
+                group_key = _rag_body_group_key(block, page_title)
+                if pending_body_key and group_key != pending_body_key:
+                    flush_body()
+                pending_body_key = group_key
+                pending_body_lines.append(body_text)
+            continue
+
+        if btype == "table":
+            flush_body()
+            table_text = _rag_format_table(block)
+            if table_text:
+                clean_table = _rag_clean_text(table_text)
+                if not _rag_is_duplicate(clean_table, seen_keys, threshold=0.95):
+                    _rag_mark_seen(clean_table, seen_keys)
+                    context_texts.append(clean_table)
+                    tables.append(clean_table)
+            continue
+
+        if btype in ("image", "chart"):
+            flush_body()
+            visual_summary = _rag_clean_visual_summary(block, context_texts)
+            if visual_summary and not _rag_is_duplicate(visual_summary, seen_keys, threshold=0.90):
+                _rag_mark_seen(visual_summary, seen_keys)
+                label = "CHART SUMMARY" if btype == "chart" else "VISUAL SUMMARY"
+                visuals.append(f"[{label}]\n{visual_summary}")
+            continue
+
+        if btype == "unknown" and text and not meta.get("summary_exclude"):
+            flush_body()
+            note = _rag_clean_text(text, 360)
+            if note and priority != "low" and not _has_disclaimer_context(note):
+                _rag_add_part(notes, "NOTE", note, seen_keys, context_texts)
+
+    flush_body()
+    return "\n\n".join(titles + body + tables + visuals + notes).strip()
 
 def _assign_block_scores(blocks: list[dict]):
     for b in blocks:

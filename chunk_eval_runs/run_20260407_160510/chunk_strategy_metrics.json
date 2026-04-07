@@ -1,0 +1,898 @@
+{
+  "schema_version": 1,
+  "strategies": [
+    "text_first_with_visual_support",
+    "llm_ready_native"
+  ],
+  "thresholds": {
+    "long_chunk_char_len_gt": 1500,
+    "short_chunk_char_len_lt": 120
+  },
+  "input": {
+    "chunks_dir": "C:\\Users\\jihyeon\\Desktop\\my3\\chunks",
+    "expected_doc_count": 8,
+    "expected_doc_ids": [
+      "1483963f1ac161b67f7ff3efbb1432a0",
+      "2072f5b049ff3c984e7d1c1a888c1f18",
+      "78e892d65ab82f707075563d9fcfe497",
+      "7de041057f9dcb58d0a189c04787527a",
+      "8b2aad7a88b01e817295ed856e51bc6a",
+      "9454b2bef0a064ff78f0cb719036c8f8",
+      "ae827bcde785199b8d6bbbc1cc8ff287",
+      "f76e5bb34c4e5dd7afeeccdf4553a1f8"
+    ],
+    "strategy_file_count": {
+      "text_first_with_visual_support": 8,
+      "llm_ready_native": 8
+    },
+    "chunk_summary_file_count": 8
+  },
+  "strategy_metrics": {
+    "text_first_with_visual_support": {
+      "strategy_name": "text_first_with_visual_support",
+      "total_chunks": 190,
+      "total_docs": 8,
+      "doc_coverage": 1.0,
+      "covered_doc_ids": [
+        "1483963f1ac161b67f7ff3efbb1432a0",
+        "2072f5b049ff3c984e7d1c1a888c1f18",
+        "78e892d65ab82f707075563d9fcfe497",
+        "7de041057f9dcb58d0a189c04787527a",
+        "8b2aad7a88b01e817295ed856e51bc6a",
+        "9454b2bef0a064ff78f0cb719036c8f8",
+        "ae827bcde785199b8d6bbbc1cc8ff287",
+        "f76e5bb34c4e5dd7afeeccdf4553a1f8"
+      ],
+      "page_coverage": {
+        "covered_pages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "covered_page_count": 19,
+        "covered_doc_page_count": 78,
+        "per_doc_covered_page_count": {
+          "1483963f1ac161b67f7ff3efbb1432a0": 17,
+          "2072f5b049ff3c984e7d1c1a888c1f18": 17,
+          "78e892d65ab82f707075563d9fcfe497": 19,
+          "7de041057f9dcb58d0a189c04787527a": 1,
+          "8b2aad7a88b01e817295ed856e51bc6a": 5,
+          "9454b2bef0a064ff78f0cb719036c8f8": 1,
+          "ae827bcde785199b8d6bbbc1cc8ff287": 1,
+          "f76e5bb34c4e5dd7afeeccdf4553a1f8": 17
+        }
+      },
+      "empty_retrieval_text_count": 0,
+      "avg_char_len": 233.0632,
+      "median_char_len": 88.0,
+      "avg_token_estimate": 57.8947,
+      "chunk_type_distribution": {
+        "block_group": 101,
+        "text": 89
+      },
+      "source_block_ids_empty_count": 0,
+      "content_flag_ratios": {
+        "has_table": 0.1526,
+        "has_chart": 0.0684,
+        "has_image": 0.1,
+        "has_text": 1.0
+      },
+      "content_flag_counts": {
+        "has_table": 29,
+        "has_chart": 13,
+        "has_image": 19,
+        "has_text": 190
+      },
+      "evidence_preview_presence_ratio": 1.0,
+      "evidence_preview_count": 190,
+      "sparse_page_related_chunk_ratio": 0.3053,
+      "sparse_page_related_chunk_count": 58,
+      "chunk_count_by_doc": {
+        "1483963f1ac161b67f7ff3efbb1432a0": 29,
+        "2072f5b049ff3c984e7d1c1a888c1f18": 31,
+        "78e892d65ab82f707075563d9fcfe497": 61,
+        "7de041057f9dcb58d0a189c04787527a": 15,
+        "8b2aad7a88b01e817295ed856e51bc6a": 18,
+        "9454b2bef0a064ff78f0cb719036c8f8": 5,
+        "ae827bcde785199b8d6bbbc1cc8ff287": 1,
+        "f76e5bb34c4e5dd7afeeccdf4553a1f8": 30
+      },
+      "chunk_count_variance_by_doc": {
+        "min": 1,
+        "max": 61,
+        "range": 60,
+        "population_stdev": 17.6263
+      },
+      "long_chunk_count": 0,
+      "short_chunk_count": 113,
+      "min_char_len": 24,
+      "max_char_len": 1381
+    },
+    "llm_ready_native": {
+      "strategy_name": "llm_ready_native",
+      "total_chunks": 865,
+      "total_docs": 8,
+      "doc_coverage": 1.0,
+      "covered_doc_ids": [
+        "1483963f1ac161b67f7ff3efbb1432a0",
+        "2072f5b049ff3c984e7d1c1a888c1f18",
+        "78e892d65ab82f707075563d9fcfe497",
+        "7de041057f9dcb58d0a189c04787527a",
+        "8b2aad7a88b01e817295ed856e51bc6a",
+        "9454b2bef0a064ff78f0cb719036c8f8",
+        "ae827bcde785199b8d6bbbc1cc8ff287",
+        "f76e5bb34c4e5dd7afeeccdf4553a1f8"
+      ],
+      "page_coverage": {
+        "covered_pages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "covered_page_count": 19,
+        "covered_doc_page_count": 78,
+        "per_doc_covered_page_count": {
+          "1483963f1ac161b67f7ff3efbb1432a0": 17,
+          "2072f5b049ff3c984e7d1c1a888c1f18": 17,
+          "78e892d65ab82f707075563d9fcfe497": 19,
+          "7de041057f9dcb58d0a189c04787527a": 1,
+          "8b2aad7a88b01e817295ed856e51bc6a": 5,
+          "9454b2bef0a064ff78f0cb719036c8f8": 1,
+          "ae827bcde785199b8d6bbbc1cc8ff287": 1,
+          "f76e5bb34c4e5dd7afeeccdf4553a1f8": 17
+        }
+      },
+      "empty_retrieval_text_count": 0,
+      "avg_char_len": 150.9676,
+      "median_char_len": 53.0,
+      "avg_token_estimate": 37.3503,
+      "chunk_type_distribution": {
+        "chart": 13,
+        "image": 22,
+        "native_page": 108,
+        "table": 148,
+        "text": 513,
+        "title": 59,
+        "unknown": 2
+      },
+      "source_block_ids_empty_count": 0,
+      "content_flag_ratios": {
+        "has_table": 0.1711,
+        "has_chart": 0.015,
+        "has_image": 0.0254,
+        "has_text": 1.0
+      },
+      "content_flag_counts": {
+        "has_table": 148,
+        "has_chart": 13,
+        "has_image": 22,
+        "has_text": 865
+      },
+      "evidence_preview_presence_ratio": 1.0,
+      "evidence_preview_count": 865,
+      "sparse_page_related_chunk_ratio": 0.0324,
+      "sparse_page_related_chunk_count": 28,
+      "chunk_count_by_doc": {
+        "1483963f1ac161b67f7ff3efbb1432a0": 63,
+        "2072f5b049ff3c984e7d1c1a888c1f18": 66,
+        "78e892d65ab82f707075563d9fcfe497": 261,
+        "7de041057f9dcb58d0a189c04787527a": 288,
+        "8b2aad7a88b01e817295ed856e51bc6a": 73,
+        "9454b2bef0a064ff78f0cb719036c8f8": 27,
+        "ae827bcde785199b8d6bbbc1cc8ff287": 22,
+        "f76e5bb34c4e5dd7afeeccdf4553a1f8": 65
+      },
+      "chunk_count_variance_by_doc": {
+        "min": 22,
+        "max": 288,
+        "range": 266,
+        "population_stdev": 97.8704
+      },
+      "long_chunk_count": 0,
+      "short_chunk_count": 677,
+      "min_char_len": 1,
+      "max_char_len": 1308
+    }
+  },
+  "doc_level_summary": [
+    {
+      "doc_id": "1483963f1ac161b67f7ff3efbb1432a0",
+      "filename": "미래에셋증권 1분기 실적보고서.pdf",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 63,
+          "page_coverage_count": 17,
+          "doc_page_coverage_count": 17,
+          "covered_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "avg_char_len": 73.9524,
+          "median_char_len": 53.0,
+          "chunk_type_distribution": {
+            "chart": 2,
+            "image": 5,
+            "native_page": 17,
+            "table": 1,
+            "text": 31,
+            "title": 7
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 3,
+          "long_chunk_count": 0,
+          "short_chunk_count": 51,
+          "content_flag_counts": {
+            "has_table": 1,
+            "has_chart": 2,
+            "has_image": 5,
+            "has_text": 63
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 29,
+          "page_coverage_count": 17,
+          "doc_page_coverage_count": 17,
+          "covered_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "avg_char_len": 99.069,
+          "median_char_len": 68.0,
+          "chunk_type_distribution": {
+            "block_group": 9,
+            "text": 20
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 13,
+          "long_chunk_count": 0,
+          "short_chunk_count": 25,
+          "content_flag_counts": {
+            "has_table": 1,
+            "has_chart": 2,
+            "has_image": 5,
+            "has_text": 29
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -34,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": 25.1166,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -26,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "2072f5b049ff3c984e7d1c1a888c1f18",
+      "filename": "미래에셋증권 2분기 실적보고서.pdf",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 66,
+          "page_coverage_count": 17,
+          "doc_page_coverage_count": 17,
+          "covered_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "avg_char_len": 70.2121,
+          "median_char_len": 48.0,
+          "chunk_type_distribution": {
+            "chart": 2,
+            "image": 6,
+            "native_page": 17,
+            "table": 1,
+            "text": 33,
+            "title": 7
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 3,
+          "long_chunk_count": 0,
+          "short_chunk_count": 55,
+          "content_flag_counts": {
+            "has_table": 1,
+            "has_chart": 2,
+            "has_image": 6,
+            "has_text": 66
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 31,
+          "page_coverage_count": 17,
+          "doc_page_coverage_count": 17,
+          "covered_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "avg_char_len": 94.6452,
+          "median_char_len": 65.0,
+          "chunk_type_distribution": {
+            "block_group": 10,
+            "text": 21
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 21,
+          "long_chunk_count": 0,
+          "short_chunk_count": 27,
+          "content_flag_counts": {
+            "has_table": 1,
+            "has_chart": 2,
+            "has_image": 6,
+            "has_text": 31
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -35,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": 24.4331,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -28,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "78e892d65ab82f707075563d9fcfe497",
+      "filename": "미래에셋증권 4분기 실적보고서.pdf",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 261,
+          "page_coverage_count": 19,
+          "doc_page_coverage_count": 19,
+          "covered_pages": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "avg_char_len": 139.272,
+          "median_char_len": 50.0,
+          "chunk_type_distribution": {
+            "chart": 6,
+            "image": 5,
+            "native_page": 21,
+            "table": 104,
+            "text": 109,
+            "title": 16
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 15,
+          "long_chunk_count": 0,
+          "short_chunk_count": 196,
+          "content_flag_counts": {
+            "has_table": 104,
+            "has_chart": 6,
+            "has_image": 5,
+            "has_text": 261
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 61,
+          "page_coverage_count": 19,
+          "doc_page_coverage_count": 19,
+          "covered_pages": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "avg_char_len": 264.1311,
+          "median_char_len": 170.0,
+          "chunk_type_distribution": {
+            "block_group": 43,
+            "text": 18
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 5,
+          "long_chunk_count": 0,
+          "short_chunk_count": 26,
+          "content_flag_counts": {
+            "has_table": 26,
+            "has_chart": 6,
+            "has_image": 3,
+            "has_text": 61
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -200,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": 124.8591,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -170,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "7de041057f9dcb58d0a189c04787527a",
+      "filename": "금융감독원 251125_(보도자료) 25.10월중 기업의 직접금융 조달실적.doc",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 288,
+          "page_coverage_count": 1,
+          "doc_page_coverage_count": 1,
+          "covered_pages": [
+            1
+          ],
+          "avg_char_len": 98.1146,
+          "median_char_len": 49.0,
+          "chunk_type_distribution": {
+            "native_page": 14,
+            "table": 6,
+            "text": 246,
+            "title": 22
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 266,
+          "content_flag_counts": {
+            "has_table": 6,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 288
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 15,
+          "page_coverage_count": 1,
+          "doc_page_coverage_count": 1,
+          "covered_pages": [
+            1
+          ],
+          "avg_char_len": 895.4,
+          "median_char_len": 923.0,
+          "chunk_type_distribution": {
+            "block_group": 15
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 0,
+          "content_flag_counts": {
+            "has_table": 0,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 15
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -273,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": 797.2854,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -266,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "8b2aad7a88b01e817295ed856e51bc6a",
+      "filename": "한화투자증권 두산밥캣 기업분석 리포트.pdf",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 73,
+          "page_coverage_count": 5,
+          "doc_page_coverage_count": 5,
+          "covered_pages": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "avg_char_len": 340.7397,
+          "median_char_len": 62.0,
+          "chunk_type_distribution": {
+            "native_page": 11,
+            "table": 12,
+            "text": 47,
+            "title": 1,
+            "unknown": 2
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 43,
+          "content_flag_counts": {
+            "has_table": 12,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 73
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 18,
+          "page_coverage_count": 5,
+          "doc_page_coverage_count": 5,
+          "covered_pages": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "avg_char_len": 186.2778,
+          "median_char_len": 98.5,
+          "chunk_type_distribution": {
+            "block_group": 10,
+            "text": 8
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 10,
+          "content_flag_counts": {
+            "has_table": 0,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 18
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -55,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": -154.4619,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -33,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "9454b2bef0a064ff78f0cb719036c8f8",
+      "filename": "DS투자증권 시황분석 리포트.pdf",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 27,
+          "page_coverage_count": 1,
+          "doc_page_coverage_count": 1,
+          "covered_pages": [
+            1
+          ],
+          "avg_char_len": 705.2593,
+          "median_char_len": 1044.0,
+          "chunk_type_distribution": {
+            "image": 1,
+            "native_page": 7,
+            "table": 10,
+            "text": 9
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 8,
+          "content_flag_counts": {
+            "has_table": 10,
+            "has_chart": 0,
+            "has_image": 1,
+            "has_text": 27
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 5,
+          "page_coverage_count": 1,
+          "doc_page_coverage_count": 1,
+          "covered_pages": [
+            1
+          ],
+          "avg_char_len": 373.6,
+          "median_char_len": 190.0,
+          "chunk_type_distribution": {
+            "block_group": 2,
+            "text": 3
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 2,
+          "content_flag_counts": {
+            "has_table": 0,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 5
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -22,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": -331.6593,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -6,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "ae827bcde785199b8d6bbbc1cc8ff287",
+      "filename": "농협 2022년 9월말 기준 사업보고서.hwp",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 22,
+          "page_coverage_count": 1,
+          "doc_page_coverage_count": 1,
+          "covered_pages": [
+            1
+          ],
+          "avg_char_len": 343.3182,
+          "median_char_len": 222.5,
+          "chunk_type_distribution": {
+            "native_page": 4,
+            "table": 13,
+            "text": 4,
+            "title": 1
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 7,
+          "content_flag_counts": {
+            "has_table": 13,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 22
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 1,
+          "page_coverage_count": 1,
+          "doc_page_coverage_count": 1,
+          "covered_pages": [
+            1
+          ],
+          "avg_char_len": 477.0,
+          "median_char_len": 477.0,
+          "chunk_type_distribution": {
+            "block_group": 1
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 0,
+          "long_chunk_count": 0,
+          "short_chunk_count": 0,
+          "content_flag_counts": {
+            "has_table": 0,
+            "has_chart": 0,
+            "has_image": 0,
+            "has_text": 1
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -21,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": 133.6818,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -7,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    },
+    {
+      "doc_id": "f76e5bb34c4e5dd7afeeccdf4553a1f8",
+      "filename": "미래에셋증권 3분기 실적보고서.pdf",
+      "strategies": {
+        "llm_ready_native": {
+          "total_chunks": 65,
+          "page_coverage_count": 17,
+          "doc_page_coverage_count": 17,
+          "covered_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "avg_char_len": 80.2769,
+          "median_char_len": 50.0,
+          "chunk_type_distribution": {
+            "chart": 3,
+            "image": 5,
+            "native_page": 17,
+            "table": 1,
+            "text": 34,
+            "title": 5
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 7,
+          "long_chunk_count": 0,
+          "short_chunk_count": 51,
+          "content_flag_counts": {
+            "has_table": 1,
+            "has_chart": 3,
+            "has_image": 5,
+            "has_text": 65
+          }
+        },
+        "text_first_with_visual_support": {
+          "total_chunks": 30,
+          "page_coverage_count": 17,
+          "doc_page_coverage_count": 17,
+          "covered_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18
+          ],
+          "avg_char_len": 107.8,
+          "median_char_len": 70.0,
+          "chunk_type_distribution": {
+            "block_group": 11,
+            "text": 19
+          },
+          "empty_retrieval_text_count": 0,
+          "source_block_ids_empty_count": 0,
+          "sparse_page_related_chunk_count": 19,
+          "long_chunk_count": 0,
+          "short_chunk_count": 23,
+          "content_flag_counts": {
+            "has_table": 1,
+            "has_chart": 3,
+            "has_image": 5,
+            "has_text": 30
+          }
+        }
+      },
+      "strategy_difference": {
+        "chunk_count_delta_text_first_minus_llm_ready_native": -35,
+        "page_coverage_delta_text_first_minus_llm_ready_native": 0,
+        "avg_char_len_delta_text_first_minus_llm_ready_native": 27.5231,
+        "short_chunk_delta_text_first_minus_llm_ready_native": -28,
+        "long_chunk_delta_text_first_minus_llm_ready_native": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "queries": [
+    {
+      "query_id": "default_001",
+      "query_text": "이 문서의 핵심 결론이나 주요 주장은 무엇인가?",
+      "category": "summary",
+      "intent": "문서 전체의 핵심 메시지를 찾는다."
+    },
+    {
+      "query_id": "default_002",
+      "query_text": "보고서에서 강조하는 주요 리스크와 불확실성은 무엇인가?",
+      "category": "risk",
+      "intent": "리스크 요인과 경영진 코멘트를 찾는다."
+    },
+    {
+      "query_id": "default_003",
+      "query_text": "전년 동기 또는 직전 분기 대비 변화가 설명된 부분은 어디인가?",
+      "category": "comparison",
+      "intent": "기간 비교와 증감 원인을 찾는다."
+    },
+    {
+      "query_id": "default_004",
+      "query_text": "표나 차트에서 요약된 수치와 그 의미를 설명하는 부분은 어디인가?",
+      "category": "table_chart",
+      "intent": "표/차트 기반 근거를 찾는다."
+    },
+    {
+      "query_id": "default_005",
+      "query_text": "향후 전망이나 다음 단계 계획을 설명하는 내용은 무엇인가?",
+      "category": "outlook",
+      "intent": "전망, 계획, 가이던스 관련 내용을 찾는다."
+    }
+  ]
+}
+
