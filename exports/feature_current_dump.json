@@ -1,0 +1,570 @@
+{
+  "sheets": [
+    {
+      "title": "프로젝트 개요",
+      "max_row": 22,
+      "max_col": 6,
+      "merged_ranges": [
+        "B4:F4",
+        "B21:F21",
+        "B9:F9",
+        "D13:F13",
+        "D14:F14",
+        "B2:F2",
+        "B20:F20",
+        "B11:F11",
+        "B19:F19",
+        "C6:F6",
+        "D12:F12",
+        "D16:F16",
+        "B22:F22",
+        "B8:F8",
+        "C5:F5",
+        "D15:F15",
+        "B18:F18"
+      ],
+      "cells": [
+        {
+          "coord": "B2",
+          "value": "my3 멀티포맷 문서 파싱 및 RAG QA·요약 시스템 기능 정의서"
+        },
+        {
+          "coord": "B4",
+          "value": "■  프로젝트 기본 정보"
+        },
+        {
+          "coord": "B5",
+          "value": "프로젝트명"
+        },
+        {
+          "coord": "C5",
+          "value": "my3 멀티포맷 문서 파싱 및 RAG QA·요약 시스템"
+        },
+        {
+          "coord": "B6",
+          "value": "작성일"
+        },
+        {
+          "coord": "C6",
+          "value": "2026-04-08"
+        },
+        {
+          "coord": "B8",
+          "value": "■  프로젝트 목적"
+        },
+        {
+          "coord": "B9",
+          "value": "PDF/DOC/DOCX/HWP/XLS/XLSX 문서를 구조화된 JSON으로 파싱하고, 청킹·임베딩·Chroma 적재를 거쳐 선택 문서 기준 QA와 문서 전체 요약을 제공하는 FastAPI 기반 시스템을 구축한다.\n정적 웹 UI에서 문서 목록, 업로드/삭제, 질의응답, 전체 요약, 품질 대시보드를 제공하며 LangSmith 추적은 선택적으로 연동한다."
+        },
+        {
+          "coord": "B11",
+          "value": "■  전체 처리 흐름"
+        },
+        {
+          "coord": "B12",
+          "value": "구분"
+        },
+        {
+          "coord": "C12",
+          "value": "단계명"
+        },
+        {
+          "coord": "D12",
+          "value": "설명"
+        },
+        {
+          "coord": "B13",
+          "value": "Step 1"
+        },
+        {
+          "coord": "C13",
+          "value": "문서 업로드·파싱"
+        },
+        {
+          "coord": "D13",
+          "value": "지원 형식 문서를 저장하고 parse_document가 확장자별 파서(PDF/DOC/DOCX/HWP/XLS/XLSX)로 분기하여 페이지·블록·미리보기·품질 정보를 생성"
+        },
+        {
+          "coord": "B14",
+          "value": "Step 2"
+        },
+        {
+          "coord": "C14",
+          "value": "청킹·벡터 준비"
+        },
+        {
+          "coord": "D14",
+          "value": "parsed_results를 기반으로 2개 chunk 전략(text_first_with_visual_support, llm_ready_native)을 생성하고 임베딩용 metadata와 vector 파일을 생성"
+        },
+        {
+          "coord": "B15",
+          "value": "Step 3"
+        },
+        {
+          "coord": "C15",
+          "value": "Chroma 적재·RAG 검색"
+        },
+        {
+          "coord": "D15",
+          "value": "vector_indexes 산출물을 Chroma persistent collection(document_chunks)에 적재하고 QA/요약 요청 시 filename_filter·top_k 조건으로 검색"
+        },
+        {
+          "coord": "B16",
+          "value": "Step 4"
+        },
+        {
+          "coord": "C16",
+          "value": "LLM 응답·UI 제공"
+        },
+        {
+          "coord": "D16",
+          "value": "검색된 컨텍스트를 gpt-5.2에 전달하여 QA/문서 전체 요약을 생성하고 정적 웹 UI에서 결과·출처·진행상태를 표시"
+        },
+        {
+          "coord": "B18",
+          "value": "⚠  주요 제약 사항"
+        },
+        {
+          "coord": "B19",
+          "value": "• 지원 입력 형식은 코드상 .pdf, .doc, .docx, .hwp, .xls, .xlsx 로 한정됨"
+        },
+        {
+          "coord": "B20",
+          "value": "• 임베딩 및 QA/요약 실행에는 OPENAI_API_KEY와 최신 인덱스(chroma_indexes/latest.json)가 필요함"
+        },
+        {
+          "coord": "B21",
+          "value": "• 업로드/삭제 인덱싱 작업은 index_build_lock으로 직렬 처리됨"
+        },
+        {
+          "coord": "B22",
+          "value": "• LangSmith 추적은 LANGSMITH_TRACING=true 일 때만 활성화되며, 미설정 시 로컬 latency_events.jsonl만 기록"
+        }
+      ]
+    },
+    {
+      "title": "요건 정의 상세",
+      "max_row": 22,
+      "max_col": 7,
+      "merged_ranges": [
+        "B5:B8",
+        "B2:G2",
+        "B14:B18",
+        "B9:B13",
+        "B19:B22"
+      ],
+      "cells": [
+        {
+          "coord": "B2",
+          "value": "요건 정의 상세  |  my3 멀티포맷 문서 파싱 및 RAG QA·요약 시스템"
+        },
+        {
+          "coord": "B4",
+          "value": "Step"
+        },
+        {
+          "coord": "C4",
+          "value": "요건 ID"
+        },
+        {
+          "coord": "D4",
+          "value": "요건명"
+        },
+        {
+          "coord": "E4",
+          "value": "상세 설명"
+        },
+        {
+          "coord": "F4",
+          "value": "구현 방법 / 기술 스택"
+        },
+        {
+          "coord": "G4",
+          "value": "비고 / 미결사항"
+        },
+        {
+          "coord": "B5",
+          "value": "Step 1\n문서 파서"
+        },
+        {
+          "coord": "C5",
+          "value": "REQ-P-01"
+        },
+        {
+          "coord": "D5",
+          "value": "지원 파일 형식 및 업로드 검증"
+        },
+        {
+          "coord": "E5",
+          "value": ".pdf, .doc, .docx, .hwp, .xls, .xlsx 업로드를 허용하고 파일명을 안전하게 정규화하여 저장한다."
+        },
+        {
+          "coord": "F5",
+          "value": "app.py upload input accept, _safe_upload_name(), parsers.SUPPORTED_EXTENSIONS"
+        },
+        {
+          "coord": "G5",
+          "value": "TXT 미지원"
+        },
+        {
+          "coord": "C6",
+          "value": "REQ-P-02"
+        },
+        {
+          "coord": "D6",
+          "value": "파서 라우팅 및 형식별 처리"
+        },
+        {
+          "coord": "E6",
+          "value": "parse_document가 확장자별 parser로 분기하고 공통 JSON 구조(id, status, pages, metadata)를 보장한다."
+        },
+        {
+          "coord": "F6",
+          "value": "parsers/__init__.py, parse_pdf/parse_doc/parse_hwp/parse_excel"
+        },
+        {
+          "coord": "C7",
+          "value": "REQ-P-03"
+        },
+        {
+          "coord": "D7",
+          "value": "페이지·블록·미리보기 추출"
+        },
+        {
+          "coord": "E7",
+          "value": "페이지별 text, blocks, preview_image, parser_debug, page_width/height를 생성하여 후속 검토와 청킹에 사용한다."
+        },
+        {
+          "coord": "F7",
+          "value": "PDF parser(PyMuPDF/pdfplumber/camelot/OCR), DOC/HWP/XLS parser별 page payload 생성"
+        },
+        {
+          "coord": "G7",
+          "value": "PDF는 표/이미지/OCR 처리 포함"
+        },
+        {
+          "coord": "C8",
+          "value": "REQ-P-04"
+        },
+        {
+          "coord": "D8",
+          "value": "메타데이터·품질 점수 산출"
+        },
+        {
+          "coord": "E8",
+          "value": "file_type, file_size, page_count, total_chars, parse_time_sec, quality_score/grade를 계산하고 UI 대시보드에 사용한다."
+        },
+        {
+          "coord": "F8",
+          "value": "quality_utils.calculate_quality_score, parsed_results JSON 캐시"
+        },
+        {
+          "coord": "B9",
+          "value": "Step 2\n벡터 DB 적재"
+        },
+        {
+          "coord": "C9",
+          "value": "REQ-I-01"
+        },
+        {
+          "coord": "D9",
+          "value": "청크 전략 2종 생성"
+        },
+        {
+          "coord": "E9",
+          "value": "text_first_with_visual_support와 llm_ready_native 전략별 chunk JSON을 생성한다."
+        },
+        {
+          "coord": "F9",
+          "value": "chunking/strategies.py, chunking/builders.py, scripts.build_chunks"
+        },
+        {
+          "coord": "G9",
+          "value": "현재 샘플 문서 대부분은 llm_ready 산출물 부재"
+        },
+        {
+          "coord": "C10",
+          "value": "REQ-I-02"
+        },
+        {
+          "coord": "D10",
+          "value": "chunk summary 산출물 생성"
+        },
+        {
+          "coord": "E10",
+          "value": "문서별 total_chunks, page_coverage, sparse_page_ratio 등 요약 통계를 별도 JSON으로 저장한다."
+        },
+        {
+          "coord": "F10",
+          "value": "chunks/{doc_id}.chunk_summary.json"
+        },
+        {
+          "coord": "C11",
+          "value": "REQ-I-03"
+        },
+        {
+          "coord": "D11",
+          "value": "임베딩 벡터 준비"
+        },
+        {
+          "coord": "E11",
+          "value": "retrieval_text가 있는 chunk를 OpenAI 임베딩으로 변환하고 vectors.npz, metadata, id_map을 생성한다."
+        },
+        {
+          "coord": "F11",
+          "value": "retrieval.vector_prep.prepare_vectors, text-embedding-3-large(3072)"
+        },
+        {
+          "coord": "G11",
+          "value": "OPENAI_API_KEY 필수"
+        },
+        {
+          "coord": "C12",
+          "value": "REQ-I-04"
+        },
+        {
+          "coord": "D12",
+          "value": "Chroma 영구 저장 및 latest 포인터 관리"
+        },
+        {
+          "coord": "E12",
+          "value": "준비된 벡터를 document_chunks 컬렉션에 적재하고 최신 run 정보를 latest.json에 갱신한다."
+        },
+        {
+          "coord": "F12",
+          "value": "chroma_store.ingest.ingest_vector_run, chroma_indexes/latest.json"
+        },
+        {
+          "coord": "G12",
+          "value": "선행 인덱스 없으면 QA/요약 불가"
+        },
+        {
+          "coord": "C13",
+          "value": "REQ-I-05"
+        },
+        {
+          "coord": "D13",
+          "value": "업로드·삭제 파이프라인 오케스트레이션"
+        },
+        {
+          "coord": "E13",
+          "value": "비동기 job으로 parse→chunk→embedding→chroma 순서를 실행하고 삭제 시 관련 산출물을 정리한 뒤 인덱스를 재생성한다."
+        },
+        {
+          "coord": "F13",
+          "value": "app.py _process_upload_job/_process_delete_job, scripts.*"
+        },
+        {
+          "coord": "G13",
+          "value": "index_build_lock으로 직렬 처리"
+        },
+        {
+          "coord": "B14",
+          "value": "Step 3\nLLM 요약"
+        },
+        {
+          "coord": "C14",
+          "value": "REQ-R-01"
+        },
+        {
+          "coord": "D14",
+          "value": "문서 기준 QA API"
+        },
+        {
+          "coord": "E14",
+          "value": "질문(query), 전략(strategy_name), top_k, filename_filter를 받아 선택 문서 기준 답변을 생성한다."
+        },
+        {
+          "coord": "F14",
+          "value": "POST /qa, rag_api.retriever.retrieve, qa_chain.run_qa_chain"
+        },
+        {
+          "coord": "G14",
+          "value": "응답 형식: mode/title/answer/sources"
+        },
+        {
+          "coord": "C15",
+          "value": "REQ-R-02"
+        },
+        {
+          "coord": "D15",
+          "value": "문서 전체 요약 API"
+        },
+        {
+          "coord": "E15",
+          "value": "filename과 top_k를 기준으로 대표 chunk를 조회해 문서 전체 요약을 생성한다."
+        },
+        {
+          "coord": "F15",
+          "value": "POST /summary, retrieve_representative, summary_chain.run_summary_chain"
+        },
+        {
+          "coord": "G15",
+          "value": "한국어 고정 섹션 헤더 사용"
+        },
+        {
+          "coord": "C16",
+          "value": "REQ-R-03"
+        },
+        {
+          "coord": "D16",
+          "value": "대표 chunk 선택 및 캐시"
+        },
+        {
+          "coord": "E16",
+          "value": "summary 요청 시 coverage 기반 후보를 우선 조회하고 selection cache를 활용하여 반복 요청 속도를 개선한다."
+        },
+        {
+          "coord": "F16",
+          "value": "rag_api.retriever summary_coverage_cache/selection_cache"
+        },
+        {
+          "coord": "G16",
+          "value": "run_id+collection+filename 기준"
+        },
+        {
+          "coord": "C17",
+          "value": "REQ-R-04"
+        },
+        {
+          "coord": "D17",
+          "value": "출처 페이지 및 문서명 응답"
+        },
+        {
+          "coord": "E17",
+          "value": "응답에는 중복 제거된 document/page source를 포함하며, 문서명 질의는 proxy 단계에서 즉시 응답한다."
+        },
+        {
+          "coord": "F17",
+          "value": "source_formatter.py, _is_document_title_query(), _document_title_response()"
+        },
+        {
+          "coord": "C18",
+          "value": "REQ-R-05"
+        },
+        {
+          "coord": "D18",
+          "value": "모델 설정 검증 및 관측"
+        },
+        {
+          "coord": "E18",
+          "value": "RAG API 시작 시 OpenAI/Chroma 설정을 검증하고 요청 단위 latency event와 선택적 LangSmith trace를 남긴다."
+        },
+        {
+          "coord": "F18",
+          "value": "rag_api.config, observability.stage_timer/optional_traceable"
+        },
+        {
+          "coord": "G18",
+          "value": "LANGSMITH_TRACING=false면 로컬 로그만"
+        },
+        {
+          "coord": "B19",
+          "value": "Step 4\nUI 제공"
+        },
+        {
+          "coord": "C19",
+          "value": "REQ-U-01"
+        },
+        {
+          "coord": "D19",
+          "value": "문서 목록 및 선택 UI"
+        },
+        {
+          "coord": "E19",
+          "value": "현재 인덱싱된 문서를 카드 형태로 나열하고 선택 문서를 QA/요약 패널 기준 문서로 지정한다."
+        },
+        {
+          "coord": "F19",
+          "value": "GET /api/rag/documents, static/index.html"
+        },
+        {
+          "coord": "C20",
+          "value": "REQ-U-02"
+        },
+        {
+          "coord": "D20",
+          "value": "업로드·삭제 진행 상태 표시"
+        },
+        {
+          "coord": "E20",
+          "value": "업로드/삭제 작업의 queued/running/completed/failed 상태와 progress/message를 polling으로 표시한다."
+        },
+        {
+          "coord": "F20",
+          "value": "POST /api/rag/upload, GET /api/rag/upload-jobs/{job_id}, POST /api/rag/delete"
+        },
+        {
+          "coord": "C21",
+          "value": "REQ-U-03"
+        },
+        {
+          "coord": "D21",
+          "value": "QA·요약 결과 렌더링"
+        },
+        {
+          "coord": "E21",
+          "value": "답변 본문과 source 목록을 카드 UI로 표시하고 drag & drop으로 문서를 QA/요약 패널에 연결한다."
+        },
+        {
+          "coord": "F21",
+          "value": "static/index.html requestJson/renderRagResponse"
+        },
+        {
+          "coord": "G21",
+          "value": "문서 선택 없이 요약 요청 불가"
+        },
+        {
+          "coord": "C22",
+          "value": "REQ-U-04"
+        },
+        {
+          "coord": "D22",
+          "value": "품질 대시보드 및 리포트"
+        },
+        {
+          "coord": "E22",
+          "value": "문서별 품질 점수, 실패 유형, quality report markdown을 별도 화면에서 조회한다."
+        },
+        {
+          "coord": "F22",
+          "value": "GET /prototype-summary, /api/prototype-stats, /api/quality-report, static/summary.html"
+        }
+      ]
+    },
+    {
+      "title": "Input 및 Output 정의",
+      "max_row": 6,
+      "max_col": 3,
+      "merged_ranges": [
+        "B2:C2"
+      ],
+      "cells": [
+        {
+          "coord": "B2",
+          "value": "Input / Output 정의"
+        },
+        {
+          "coord": "B4",
+          "value": "구분"
+        },
+        {
+          "coord": "B5",
+          "value": "Input"
+        },
+        {
+          "coord": "C5",
+          "value": "• 입력 문서\n - 지원 형식: PDF, DOC, DOCX, HWP, XLS, XLSX\n - 현재 샘플 코퍼스: 금융/증권 PDF 7건, 보도자료 DOC 1건, 사업보고서 HWP 1건\n• 입력 파라미터\n - QA: query, strategy_name, top_k, filename_filter\n - Summary: filename, strategy_name, top_k\n• 운영 입력\n - .env 기반 OPENAI_API_KEY, 선택적 LANGSMITH_* 설정, chroma_indexes/latest.json"
+        },
+        {
+          "coord": "B6",
+          "value": "Output"
+        },
+        {
+          "coord": "C6",
+          "value": "• 파싱 결과\n - parsed_results/{doc_id}.json : pages, blocks, preview_image, metadata, quality_score/grade\n• 중간 산출물\n - chunks/*.json, *.chunk_summary.json, vector_indexes/*, chroma_indexes/*\n• API 응답\n - QA/요약 공통: mode, title, answer, sources[document, page]\n• UI 출력\n - 문서 카드 목록, 업로드/삭제 진행상태, QA 답변, 문서 전체 요약, 품질 대시보드"
+        }
+      ]
+    }
+  ]
+}

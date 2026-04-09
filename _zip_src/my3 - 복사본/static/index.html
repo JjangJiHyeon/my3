@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document RAG Demo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ffffff;
+      --sidebar: #f7f7f8;
+      --sidebar-hover: #ececf1;
+      --sidebar-active: #e7e7ea;
+      --surface: #ffffff;
+      --surface-soft: #f7f7f8;
+      --surface-strong: #f2f2f3;
+      --border: #e5e5e5;
+      --border-strong: #d9d9e3;
+      --muted: #6b7280;
+      --text: #202123;
+      --text-soft: #3f3f46;
+      --accent: #10a37f;
+      --accent-dark: #0f8f70;
+      --danger: #d92d20;
+      --ok: #0f8f70;
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.09);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans KR", "Inter", "Segoe UI", Arial, sans-serif;
+      font-size: 15px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    button,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 260px;
+      right: 0;
+      z-index: 10;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(14px);
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .top-note {
+      display: none;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: var(--text-soft);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 650;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .pill::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(520px, 1fr) 360px;
+      background: var(--bg);
+    }
+
+    .panel {
+      min-height: 0;
+      background: var(--surface);
+    }
+
+    .panel-header {
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header h2 {
+      font-size: 15px;
+      font-weight: 720;
+      letter-spacing: -0.01em;
+    }
+
+    .panel-header small {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .app > aside:first-child {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      border-right: 1px solid var(--border);
+      background: var(--sidebar);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app > aside:first-child .panel-header {
+      min-height: 96px;
+      border-bottom: 0;
+    }
+
+    .app > aside:first-child .panel-header::before {
+      content: none;
+    }
+
+    .sidebar-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .sidebar-brand {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      color: #111827;
+      background: #ffffff;
+      font-weight: 760;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .upload-button {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      color: #111827;
+      background: #ffffff;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      transition: background 0.14s ease, transform 0.14s ease;
+    }
+
+    .upload-button:hover {
+      background: var(--sidebar-hover);
+      transform: translateY(-1px);
+    }
+
+    .upload-button:disabled {
+      cursor: wait;
+      opacity: 0.55;
+      transform: none;
+    }
+
+    .upload-progress {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #ffffff;
+      color: var(--text-soft);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .upload-progress[hidden] {
+      display: none;
+    }
+
+    .upload-progress-bar {
+      height: 5px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: var(--surface-strong);
+      overflow: hidden;
+    }
+
+    .upload-progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 0.2s ease;
+    }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 30;
+      max-width: 360px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .toast.error {
+      border-color: rgba(217, 45, 32, 0.32);
+      color: var(--danger);
+    }
+
+    .doc-list {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 8px 10px 18px;
+    }
+
+    .doc-card {
+      width: 100%;
+      margin-bottom: 4px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 28px;
+      gap: 8px;
+      align-items: start;
+      transition: background 0.14s ease, box-shadow 0.14s ease;
+    }
+
+    .doc-card:hover {
+      background: var(--sidebar-hover);
+    }
+
+    .doc-card.active {
+      background: var(--sidebar-active);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .doc-card.dragging {
+      opacity: 0.55;
+    }
+
+    .doc-card-main {
+      min-width: 0;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .doc-delete-button {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      color: #8e8ea0;
+      background: transparent;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+
+    .doc-delete-button:hover {
+      color: var(--danger);
+      background: #ffffff;
+    }
+
+    .doc-title {
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .doc-meta {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .qa-panel {
+      min-height: 100vh;
+      padding-top: 56px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .qa-panel > .panel-header {
+      display: none;
+    }
+
+    .qa-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 30px 24px 124px;
+    }
+
+    .drop-target {
+      position: relative;
+      transition: box-shadow 0.14s ease, background 0.14s ease;
+    }
+
+    .drop-target.drag-over {
+      box-shadow: inset 0 0 0 2px rgba(16, 163, 127, 0.45);
+      background: rgba(16, 163, 127, 0.035);
+    }
+
+    .drop-target.drag-over::after {
+      content: "문서를 여기에 놓으면 선택됩니다";
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      z-index: 12;
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      border: 1px solid rgba(16, 163, 127, 0.25);
+      border-radius: 999px;
+      color: var(--accent-dark);
+      background: #ffffff;
+      font-size: 12px;
+      font-weight: 750;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .qa-body > div:first-child {
+      order: 2;
+      position: fixed;
+      left: calc(260px + ((100vw - 260px - 360px - min(820px, calc(100vw - 620px))) / 2));
+      right: calc(360px + ((100vw - 260px - 360px - min(820px, calc(100vw - 620px))) / 2));
+      bottom: 20px;
+      z-index: 11;
+      max-width: 820px;
+      margin: 0 auto;
+      border: 1px solid var(--border-strong);
+      border-radius: 28px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .qa-body label {
+      display: none;
+    }
+
+    .selected-doc-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+      margin: 0 4px 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .selected-doc-chip span {
+      flex: 0 0 auto;
+      color: var(--accent-dark);
+      font-weight: 750;
+    }
+
+    .selected-doc-chip strong {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--text-soft);
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: #ffffff;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 62px;
+      max-height: 180px;
+      resize: vertical;
+      border: 0;
+      border-radius: 18px;
+      padding: 8px 10px;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    textarea::placeholder {
+      color: #8e8ea0;
+    }
+
+    textarea:focus {
+      box-shadow: none;
+    }
+
+    select {
+      height: 36px;
+      border-radius: 999px;
+      padding: 0 12px;
+      color: var(--text-soft);
+      background: var(--surface-soft);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.12);
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 104px 46px;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    button.primary {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #111827;
+      color: transparent;
+      font-size: 0;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.14s ease, background 0.14s ease, opacity 0.14s ease;
+      position: relative;
+    }
+
+    button.primary::before {
+      content: "↑";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    button.primary:hover {
+      background: #000000;
+      transform: translateY(-1px);
+    }
+
+    button.primary:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    .status {
+      min-height: 18px;
+      margin: 8px 8px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .result-wrapper,
+    #qaResult {
+      order: 1;
+    }
+
+    .answer-card {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      color: var(--text);
+      line-height: 1.8;
+      white-space: pre-wrap;
+      font-size: 15px;
+    }
+
+    .summary-title {
+      margin-bottom: 12px;
+      color: #111827;
+      font-size: 17px;
+      font-weight: 760;
+      line-height: 1.45;
+      letter-spacing: -0.02em;
+    }
+
+    .placeholder {
+      color: var(--muted);
+      text-align: center;
+      padding: 44px 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+      line-height: 1.6;
+    }
+
+    #qaResult.result-wrapper,
+    .summary-body .summary-title,
+    .summary-body .answer-card,
+    .summary-body .sources {
+      animation: fadeUp 0.18s ease-out;
+    }
+
+    #qaResult.result-wrapper {
+      margin-top: 20px;
+      padding: 0 2px;
+    }
+
+    #qaResult.result-wrapper::before {
+      content: "답변";
+      display: block;
+      margin-bottom: 12px;
+      color: #8e8ea0;
+      font-size: 13px;
+    }
+
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .source-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--text-soft);
+      background: var(--surface-soft);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .app > aside:last-child {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding-top: 56px;
+      border-left: 1px solid var(--border);
+      background: #fbfbfb;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app > aside:last-child .panel-header {
+      background: rgba(251, 251, 251, 0.94);
+    }
+
+    .summary-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 18px;
+    }
+
+    .summary-body .answer-card {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      header {
+        left: 230px;
+      }
+
+      .app {
+        grid-template-columns: 230px minmax(440px, 1fr);
+      }
+
+      .app > aside:last-child {
+        grid-column: 2;
+        position: static;
+        height: auto;
+        min-height: 420px;
+        padding-top: 0;
+        border-left: 0;
+        border-top: 1px solid var(--border);
+      }
+
+      .qa-body > div:first-child {
+        left: 254px;
+        right: 24px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      header {
+        left: 0;
+        height: auto;
+        min-height: 56px;
+      }
+
+      header .pill {
+        display: none;
+      }
+
+      .app {
+        display: block;
+        padding-top: 56px;
+      }
+
+      .app > aside:first-child,
+      .app > aside:last-child,
+      .qa-panel {
+        position: static;
+        height: auto;
+        min-height: 0;
+        padding-top: 0;
+      }
+
+      .app > aside:first-child {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .doc-list {
+        max-height: 320px;
+      }
+
+      .qa-body {
+        padding: 22px 16px 180px;
+      }
+
+      .qa-body > div:first-child {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>ChatGPT · Document RAG</h1>
+      <p class="top-note">QA와 문서 전체 요약은 분리된 API 호출로 동작합니다.</p>
+    </div>
+    <span class="pill">gpt-5.2 · text-embedding-3-large</span>
+  </header>
+
+  <div class="app">
+    <aside class="panel">
+      <div class="panel-header">
+        <div class="sidebar-title-row">
+          <div class="sidebar-brand">문서 RAG</div>
+          <button id="uploadButton" class="upload-button" type="button" title="문서 업로드" onclick="openUploadDialog()">+</button>
+        </div>
+        <input id="uploadInput" type="file" hidden accept=".pdf,.doc,.docx,.hwp,.xls,.xlsx" onchange="uploadSelectedFile()" />
+        <div id="uploadProgress" class="upload-progress" hidden>
+          <div id="uploadProgressText">업로드 준비 중...</div>
+          <div class="upload-progress-bar">
+            <div id="uploadProgressFill" class="upload-progress-fill"></div>
+          </div>
+        </div>
+        <h2>문서 목록</h2>
+        <small id="docListStatus">문서 목록을 불러오는 중...</small>
+      </div>
+      <div id="docList" class="doc-list"></div>
+    </aside>
+
+    <main class="panel qa-panel drop-target" data-drop-target="qa">
+      <div class="panel-header">
+        <h2>QA</h2>
+        <small id="selectedDocLabel">문서를 선택하면 해당 문서 기준으로 질문합니다.</small>
+      </div>
+      <section class="qa-body">
+        <div>
+          <div id="selectedDocChip" class="selected-doc-chip">
+            <span>답변 기준</span>
+            <strong>문서를 선택하세요</strong>
+          </div>
+          <label for="questionInput">질문</label>
+          <textarea id="questionInput" placeholder="무엇이든 물어보세요. 선택한 문서를 기준으로 답합니다."></textarea>
+          <div class="control-row">
+            <select id="strategySelect" title="strategy_name">
+              <option value="text_first_with_visual_support">text_first_with_visual_support</option>
+              <option value="llm_ready_native">llm_ready_native</option>
+            </select>
+            <select id="topKSelect" title="top_k">
+              <option value="5">top_k 5</option>
+              <option value="8">top_k 8</option>
+              <option value="12">top_k 12</option>
+            </select>
+            <button id="askButton" class="primary" type="button" onclick="askQuestion()">질문</button>
+          </div>
+          <div id="qaStatus" class="status"></div>
+        </div>
+
+        <div id="qaResult" class="placeholder">문서를 선택하고 질문을 입력하면 답변이 여기에 표시됩니다.</div>
+      </section>
+    </main>
+
+    <aside class="panel drop-target" data-drop-target="summary">
+      <div class="panel-header">
+        <h2>문서 전체 요약</h2>
+        <small id="summaryStatus">문서를 클릭하면 오른쪽 패널만 갱신됩니다.</small>
+      </div>
+      <section id="summaryResult" class="summary-body">
+        <div class="placeholder">요약할 문서를 선택하세요.</div>
+      </section>
+    </aside>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const state = {
+      documents: [],
+      selectedDocument: null,
+      summaryRequestId: 0,
+      qaRequestId: 0,
+      uploadPollTimer: null
+    };
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+      });
+      const text = await response.text();
+      let payload = {};
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch (error) {
+          payload = { detail: text };
+        }
+      }
+      if (!response.ok) {
+        throw new Error(typeof payload.detail === "string" ? payload.detail : JSON.stringify(payload.detail || payload));
+      }
+      return payload;
+    }
+
+    function openUploadDialog() {
+      document.getElementById("uploadInput").click();
+    }
+
+    async function uploadSelectedFile() {
+      const input = document.getElementById("uploadInput");
+      const file = input.files && input.files[0];
+      if (!file) return;
+
+      const button = document.getElementById("uploadButton");
+      const formData = new FormData();
+      formData.append("file", file);
+      button.disabled = true;
+      updateUploadProgress({ progress: 3, message: "파일 업로드 중...", filename: file.name });
+
+      try {
+        const response = await fetch("/api/rag/upload", {
+          method: "POST",
+          body: formData
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.detail || "업로드를 시작하지 못했습니다.");
+        }
+        showToast(`${payload.filename || file.name} 인덱싱을 시작했습니다. 작업 중에도 QA와 요약은 계속 사용할 수 있습니다.`);
+        pollUploadJob(payload.job_id);
+      } catch (error) {
+        button.disabled = false;
+        updateUploadProgress(null);
+        showToast(error.message, true);
+      } finally {
+        input.value = "";
+      }
+    }
+
+    async function pollUploadJob(jobId) {
+      if (state.uploadPollTimer) {
+        clearTimeout(state.uploadPollTimer);
+        state.uploadPollTimer = null;
+      }
+
+      try {
+        const job = await requestJson(`/api/rag/upload-jobs/${encodeURIComponent(jobId)}`);
+        updateUploadProgress(job);
+
+        if (job.status === "completed") {
+          document.getElementById("uploadButton").disabled = false;
+          await loadDocuments();
+          updateUploadProgress(null);
+          if (job.kind === "delete") {
+            showToast(`${job.filename || "문서"} 삭제와 인덱스 갱신이 완료되었습니다.`);
+          } else {
+            showToast(`${job.filename || "문서"} 업로드와 인덱싱이 완료되었습니다.`);
+          }
+          return;
+        }
+        if (job.status === "failed") {
+          document.getElementById("uploadButton").disabled = false;
+          updateUploadProgress(null);
+          showToast(job.error || "업로드 처리에 실패했습니다.", true);
+          return;
+        }
+
+        state.uploadPollTimer = setTimeout(() => pollUploadJob(jobId), 1800);
+      } catch (error) {
+        document.getElementById("uploadButton").disabled = false;
+        updateUploadProgress(null);
+        showToast(error.message, true);
+      }
+    }
+
+    function updateUploadProgress(job) {
+      const wrapper = document.getElementById("uploadProgress");
+      const text = document.getElementById("uploadProgressText");
+      const fill = document.getElementById("uploadProgressFill");
+      if (!job) {
+        wrapper.hidden = true;
+        fill.style.width = "0%";
+        text.textContent = "";
+        return;
+      }
+      const progress = Math.max(0, Math.min(100, Number(job.progress || 0)));
+      wrapper.hidden = false;
+      fill.style.width = `${progress}%`;
+      text.textContent = `${job.filename ? `${job.filename} · ` : ""}${job.message || "처리 중..."}`;
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.className = `toast show${isError ? " error" : ""}`;
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.className = "toast";
+      }, 5200);
+    }
+
+    async function loadDocuments() {
+      const status = document.getElementById("docListStatus");
+      try {
+        state.documents = await requestJson("/api/rag/documents");
+        status.textContent = `${state.documents.length}개 문서`;
+        if (state.selectedDocument) {
+          const refreshedSelection = state.documents.find(doc => doc.filename === state.selectedDocument.filename);
+          if (refreshedSelection) {
+            state.selectedDocument = refreshedSelection;
+            syncStrategyOptionsForDocument(refreshedSelection);
+            updateSelectedDocumentIndicators();
+          } else {
+            state.selectedDocument = null;
+            updateSelectedDocumentIndicators();
+            document.getElementById("summaryResult").innerHTML = `<div class="placeholder">요약할 문서를 선택하세요.</div>`;
+          }
+        }
+        renderDocuments();
+      } catch (error) {
+        status.textContent = "문서 목록 로드 실패";
+        status.classList.add("error");
+        document.getElementById("docList").innerHTML = `<div class="placeholder">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function renderDocuments() {
+      const docList = document.getElementById("docList");
+      if (!state.documents.length) {
+        docList.innerHTML = `<div class="placeholder">표시할 문서가 없습니다.</div>`;
+        return;
+      }
+
+      docList.innerHTML = state.documents.map((doc, index) => {
+        const active = state.selectedDocument && state.selectedDocument.filename === doc.filename ? "active" : "";
+        const strategies = (doc.strategies || []).join(", ");
+        return `
+          <div class="doc-card ${active}" draggable="true" ondragstart="handleDocumentDragStart(event, ${index})" ondragend="handleDocumentDragEnd(event)">
+            <button class="doc-card-main" type="button" onclick="selectDocument(${index})">
+              <div class="doc-title">${escapeHtml(doc.filename)}</div>
+              <div class="doc-meta">${doc.page_count || 0} pages · ${doc.chunk_count || 0} chunks</div>
+              <div class="doc-meta">${escapeHtml(strategies)}</div>
+            </button>
+            <button class="doc-delete-button" type="button" title="문서 삭제" onclick="deleteDocument(${index})">×</button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function syncStrategyOptionsForDocument(doc) {
+      const select = document.getElementById("strategySelect");
+      const current = select.value;
+      const fallback = ["text_first_with_visual_support", "llm_ready_native"];
+      const strategies = Array.from(new Set((doc?.strategies || []).filter(Boolean)));
+      const options = strategies.length ? strategies : fallback;
+      const preferred = options.includes(current)
+        ? current
+        : options.includes("text_first_with_visual_support")
+          ? "text_first_with_visual_support"
+          : options[0];
+
+      select.innerHTML = options.map(strategy =>
+        `<option value="${escapeHtml(strategy)}">${escapeHtml(strategy)}</option>`
+      ).join("");
+      select.value = preferred;
+    }
+
+    function updateSelectedDocumentIndicators() {
+      const filename = state.selectedDocument?.filename || "";
+      const label = document.getElementById("selectedDocLabel");
+      const chip = document.getElementById("selectedDocChip");
+      if (filename) {
+        label.textContent = `선택 문서: ${filename}`;
+        chip.innerHTML = `<span>답변 기준</span><strong title="${escapeHtml(filename)}">${escapeHtml(filename)}</strong>`;
+      } else {
+        label.textContent = "문서를 선택하면 해당 문서 기준으로 질문합니다.";
+        chip.innerHTML = `<span>답변 기준</span><strong>문서를 선택하세요</strong>`;
+      }
+    }
+
+    async function deleteDocument(index) {
+      const doc = state.documents[index];
+      if (!doc) return;
+      if (!confirm(`${doc.filename} 문서를 삭제하고 인덱스를 갱신할까요?`)) return;
+
+      updateUploadProgress({ progress: 5, message: "삭제 요청 중...", filename: doc.filename });
+      try {
+        const payload = await requestJson("/api/rag/delete", {
+          method: "POST",
+          body: JSON.stringify({ filename: doc.filename })
+        });
+        showToast(`${doc.filename} 삭제 작업을 시작했습니다. 작업 중에도 QA와 요약은 계속 사용할 수 있습니다.`);
+        pollUploadJob(payload.job_id);
+      } catch (error) {
+        updateUploadProgress(null);
+        showToast(error.message, true);
+      }
+    }
+
+    async function selectDocument(index) {
+      state.selectedDocument = state.documents[index];
+      renderDocuments();
+      syncStrategyOptionsForDocument(state.selectedDocument);
+      updateSelectedDocumentIndicators();
+      document.getElementById("qaStatus").textContent = "";
+      await loadSummaryForSelectedDocument();
+    }
+
+    function handleDocumentDragStart(event, index) {
+      const doc = state.documents[index];
+      if (!doc) return;
+      event.dataTransfer.effectAllowed = "copy";
+      event.dataTransfer.setData("text/plain", doc.filename);
+      event.dataTransfer.setData("application/x-rag-doc-index", String(index));
+      event.currentTarget.classList.add("dragging");
+    }
+
+    function handleDocumentDragEnd(event) {
+      event.currentTarget.classList.remove("dragging");
+      clearDragOverState();
+    }
+
+    function setupDocumentDropTargets() {
+      document.querySelectorAll("[data-drop-target]").forEach(target => {
+        target.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+          target.classList.add("drag-over");
+        });
+        target.addEventListener("dragleave", (event) => {
+          if (!target.contains(event.relatedTarget)) {
+            target.classList.remove("drag-over");
+          }
+        });
+        target.addEventListener("drop", async (event) => {
+          event.preventDefault();
+          clearDragOverState();
+          const rawIndex = event.dataTransfer.getData("application/x-rag-doc-index");
+          const filename = event.dataTransfer.getData("text/plain");
+          const parsedIndex = Number(rawIndex);
+          const index = Number.isInteger(parsedIndex)
+            ? parsedIndex
+            : state.documents.findIndex(doc => doc.filename === filename);
+          if (index >= 0 && state.documents[index]) {
+            await selectDocument(index);
+            const targetLabel = target.dataset.dropTarget === "summary" ? "요약" : "채팅";
+            showToast(`${state.documents[index].filename} 문서를 ${targetLabel} 기준으로 선택했습니다.`);
+          }
+        });
+      });
+    }
+
+    function clearDragOverState() {
+      document.querySelectorAll(".drop-target.drag-over").forEach(target => {
+        target.classList.remove("drag-over");
+      });
+    }
+
+    async function loadSummaryForSelectedDocument() {
+      const doc = state.selectedDocument;
+      if (!doc) return;
+
+      const requestId = ++state.summaryRequestId;
+      const status = document.getElementById("summaryStatus");
+      const result = document.getElementById("summaryResult");
+      status.className = "status";
+      status.textContent = "요약 생성 중...";
+      result.innerHTML = `<div class="placeholder">선택 문서 요약을 불러오는 중입니다.</div>`;
+
+      try {
+        const payload = await requestJson("/api/rag/summary", {
+          method: "POST",
+          body: JSON.stringify({
+            filename: doc.filename,
+            strategy_name: document.getElementById("strategySelect").value,
+            top_k: 8
+          })
+        });
+        if (requestId !== state.summaryRequestId) return;
+        status.textContent = "요약 완료";
+        status.classList.add("ok");
+        result.innerHTML = renderRagResponse(payload, "summary");
+      } catch (error) {
+        if (requestId !== state.summaryRequestId) return;
+        status.textContent = "요약 실패";
+        status.classList.add("error");
+        result.innerHTML = `<div class="placeholder">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    async function askQuestion() {
+      const doc = state.selectedDocument;
+      const questionInput = document.getElementById("questionInput");
+      const query = questionInput.value.trim();
+      const status = document.getElementById("qaStatus");
+      const result = document.getElementById("qaResult");
+      const askButton = document.getElementById("askButton");
+
+      status.className = "status";
+      if (!doc) {
+        status.textContent = "먼저 문서를 선택하세요.";
+        status.classList.add("error");
+        return;
+      }
+      if (!query) {
+        status.textContent = "질문을 입력하세요.";
+        status.classList.add("error");
+        return;
+      }
+
+      const requestId = ++state.qaRequestId;
+      askButton.disabled = true;
+      status.textContent = "QA 답변 생성 중...";
+      result.className = "placeholder";
+      result.textContent = "선택 문서 기준으로 답변을 생성하고 있습니다.";
+
+      try {
+        const payload = await requestJson("/api/rag/qa", {
+          method: "POST",
+          body: JSON.stringify({
+            query,
+            strategy_name: document.getElementById("strategySelect").value,
+            top_k: Number(document.getElementById("topKSelect").value),
+            filename_filter: doc.filename
+          })
+        });
+        if (requestId !== state.qaRequestId) return;
+        status.textContent = "QA 완료";
+        status.classList.add("ok");
+        questionInput.value = "";
+        result.className = "result-wrapper";
+        result.innerHTML = renderRagResponse(payload, "qa");
+      } catch (error) {
+        if (requestId !== state.qaRequestId) return;
+        status.textContent = "QA 실패";
+        status.classList.add("error");
+        result.className = "placeholder";
+        result.textContent = error.message;
+      } finally {
+        askButton.disabled = false;
+      }
+    }
+
+    function renderRagResponse(payload, expectedMode) {
+      const mode = payload.mode || expectedMode;
+      const title = payload.title || (mode === "summary" ? "문서 요약" : "QA 응답");
+      const answer = payload.answer || "";
+      const sources = Array.isArray(payload.sources) ? payload.sources : [];
+      return `
+        <div class="summary-title">${escapeHtml(title)}</div>
+        <div class="answer-card">${escapeHtml(answer)}</div>
+        ${renderSources(sources)}
+      `;
+    }
+
+    function renderSources(sources) {
+      if (!sources.length) return `<div class="sources"><span class="source-chip">sources 없음</span></div>`;
+      return `
+        <div class="sources">
+          ${sources.map(source => `
+            <span class="source-chip">${escapeHtml(source.document || "")} · p.${Number(source.page || 0)}</span>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = value == null ? "" : String(value);
+      return div.innerHTML;
+    }
+
+    document.getElementById("questionInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        askQuestion();
+      }
+    });
+
+    setupDocumentDropTargets();
+    loadDocuments();
+  </script>
+</body>
+
+</html>

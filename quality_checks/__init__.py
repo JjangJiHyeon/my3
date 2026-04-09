@@ -1,2 +1,0 @@
-"""Chunk quality comparison utilities."""
-

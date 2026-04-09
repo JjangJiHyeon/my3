@@ -1,0 +1,15 @@
+{
+  "run_id": "run_20260408_164403",
+  "timestamp": "2026-04-08T16:44:03",
+  "api": "LangChain-lite RAG API",
+  "chat_model": "gpt-5.2",
+  "embedding_model": "text-embedding-3-large",
+  "embedding_dimensions": 3072,
+  "endpoints": [
+    "/qa",
+    "/summary"
+  ],
+  "langsmith_tracing_enabled": true,
+  "langsmith_project": "my3-rag",
+  "latency_events_path": "C:\\Users\\jihyeon\\Desktop\\my3\\rag_api_runs\\run_20260408_164403\\latency_events.jsonl"
+}

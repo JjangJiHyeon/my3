@@ -1,0 +1,8 @@
+{
+  "run_id": "run_20260408_164427",
+  "run_dir": "vector_indexes/run_20260408_164427",
+  "manifest_path": "vector_indexes/run_20260408_164427/run_manifest.json",
+  "metadata_path": "vector_indexes/run_20260408_164427/chunk_metadata_records.jsonl",
+  "vectors_path": "vector_indexes/run_20260408_164427/vectors.npz",
+  "id_map_path": "vector_indexes/run_20260408_164427/id_map.json"
+}

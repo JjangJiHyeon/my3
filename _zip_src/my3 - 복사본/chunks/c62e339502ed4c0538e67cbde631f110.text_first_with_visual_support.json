@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "strategy_name": "text_first_with_visual_support",
+  "doc_id": "c62e339502ed4c0538e67cbde631f110",
+  "filename": "2026년도 IT재고실사_유지현.xlsx",
+  "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\2026년도 IT재고실사_유지현.xlsx",
+  "document_type": null,
+  "pipeline_used": null,
+  "quality_grade": "A",
+  "total_chunks": 1,
+  "issues": [
+    "sparse_page:1"
+  ],
+  "chunks": [
+    {
+      "chunk_id": "c62e339502ed4c0538e67cbde631f110:text_first_with_visual_support:p1:0001:chart_summary:d7517139",
+      "strategy_name": "text_first_with_visual_support",
+      "doc_id": "c62e339502ed4c0538e67cbde631f110",
+      "filename": "2026년도 IT재고실사_유지현.xlsx",
+      "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\2026년도 IT재고실사_유지현.xlsx",
+      "document_type": null,
+      "pipeline_used": null,
+      "quality_grade": "A",
+      "page_num": 1,
+      "chunk_index": 1,
+      "chunk_type": "chart_summary",
+      "section_title": "",
+      "page_title": "",
+      "associated_title": "",
+      "source_block_ids": [],
+      "chosen_text_source": null,
+      "summary_priority": null,
+      "has_text": true,
+      "has_table": false,
+      "has_chart": true,
+      "has_image": false,
+      "table_count": 0,
+      "image_count": 0,
+      "retrieval_text": "[VISUAL STRUCTURED CHART-LIKE PAGE]\n\ndocument_page: 1\n\ntitle: 사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항\n\nconfidence: 0.48\n\nstructured_status: partial\n\nseries_or_legend_candidates: 사번 사용자 구분 제조사 모델명 S, N 장치사양 윈도우사양 Key No. 기타 참고사항, P124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7, 프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz), 설치된 RAM 16.0GB(15.7GB 사용 가능), 장치 ID E1FC10C3-D775-459E-8686-583B5A403F62, 제품 ID 00330-53797-71055-AAOEM, 시스템 종류 64비트 운영 체제, x64 기반 프로세서, 펜 및 터치 이 디스플레이에 사용할 수 있는 펜 또는 터치식 입력이 없습니다. 에디션 Windows 11 Pro, 버전 25H2, 설치 날짜 ‎2021-‎04-‎23, OS 빌드 26200.8037, 경험 Windows 기능 경험 팩 1000.26100.300.0 VN92R-94VPC-CHXKX-3K7JH-2R4C2\n\ndata_point_candidates: 2.80, 16.0, 15.7, 26200.8037, 1000.26100, 300.0\n\nperiod_candidates: 2021\n\ntrend_summary: same-unit numeric labels 2.80 -> 300.0 appear to have increased; verify axis/series pairing against the source visual.\n\n[PAGE VISUAL CONTEXT]\n\n사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항\nP124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7\n프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz)\n설치된 RAM 16.0GB(15.7GB 사용 가능)\n장치 ID E1FC10C3-D775-459E-8686-583B5A403F62\n제품 ID 00330-53797-71055-AAOEM\n시스템 종류 64비트 운영 체제, x64 기반 프로세서\n펜 및 터치 이 디스플레이에 사용할 수 있는 펜 또는 터치식 입력이 없습니다. 에디션 Windows 11 Pro\n버전 25H2\n설치 날짜 ‎2021-‎04-‎23\nOS 빌드 26200.8037\n경험 Windows 기능 경험 팩 1000.26100.300.0 VN92R-94VPC-CHXKX-3K7JH-2R4C2",
+      "display_text": "[VISUAL STRUCTURED CHART-LIKE PAGE]\n\ndocument_page: 1\n\ntitle: 사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항\n\nconfidence: 0.48\n\nstructured_status: partial\n\nseries_or_legend_candidates: 사번 사용자 구분 제조사 모델명 S, N 장치사양 윈도우사양 Key No. 기타 참고사항, P124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7, 프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz), 설치된 RAM 16.0GB(15.7GB 사용 가능), 장치 ID E1FC10C3-D775-459E-8686-583B5A403F62, 제품 ID 00330-53797-71055-AAOEM, 시스템 종류 64비트 운영 체제, x64 기반 프로세서, 펜 및 터치 이 디스플레이에 사용할 수 있는 펜 또는 터치식 입력이 없습니다. 에디션 Windows 11 Pro, 버전 25H2, 설치 날짜 ‎2021-‎04-‎23, OS 빌드 26200.8037, 경험 Windows 기능 경험 팩 1000.26100.300.0 VN92R-94VPC-CHXKX-3K7JH-2R4C2\n\ndata_point_candidates: 2.80, 16.0, 15.7, 26200.8037, 1000.26100, 300.0\n\nperiod_candidates: 2021\n\ntrend_summary: same-unit numeric labels 2.80 -> 300.0 appear to have increased; verify axis/series pairing against the source visual.\n\n[PAGE VISUAL CONTEXT]\n\n사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항\nP124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7\n프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz)\n설치된 RAM 16.0GB(15.7GB 사용 가능)\n장치 ID E1FC10C3-D775-459E-8686-583B5A403F62\n제품 ID 00330-53797-71055-AAOEM\n시스템 종류 64비트 운영 체제, x64 기반 프로세서\n펜 및 터치 이 디스플레이에 사용할 수 있는 펜 또는 터치식 입력이 없습니다. 에디션 Windows 11 Pro\n버전 25H2\n설치 날짜 ‎2021-‎04-‎23\nOS 빌드 26200.8037\n경험 Windows 기능 경험 팩 1000.26100.300.0 VN92R-94VPC-CHXKX-3K7JH-2R4C2",
+      "evidence_preview": "[VISUAL STRUCTURED CHART-LIKE PAGE]\n\ndocument_page: 1\n\ntitle: 사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항\n\nconfidence: 0.48\n\nstructured_status: partial\n\nseries_or_legend_candidates: 사번 사용자 구분 제조사 모델명 S, N 장치사양 윈도우사양 Key No. 기타 참고사항, P124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7, 프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz), 설치된 RAM 16.0GB(15.7GB 사용 가능), 장치 ID E1FC10C3-D775-459E-8686-583B5A403F62, 제품 ID 00330-53797-71055-AAOEM, 시스템 종류 64비트 운영 체제, x64 기반 프로세서, ",
+      "char_len": 1412,
+      "token_estimate": 353,
+      "metadata": {
+        "parser_debug": {},
+        "preview_image": null,
+        "page_width": null,
+        "page_height": null,
+        "routing": {
+          "routing_confidence": null,
+          "routing_reason": null,
+          "routing_reasons": null,
+          "routing_signals": null,
+          "page_type_distribution": null
+        },
+        "block_type_counts": null,
+        "visual_structured": {
+          "type": "chart_like_page",
+          "page_num": 1,
+          "chart_index": 1,
+          "title": "사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항",
+          "bbox": [],
+          "legend_or_series_candidates": [
+            "사번 사용자 구분 제조사 모델명 S",
+            "N 장치사양 윈도우사양 Key No. 기타 참고사항",
+            "P124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7",
+            "프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz)",
+            "설치된 RAM 16.0GB(15.7GB 사용 가능)",
+            "장치 ID E1FC10C3-D775-459E-8686-583B5A403F62",
+            "제품 ID 00330-53797-71055-AAOEM",
+            "시스템 종류 64비트 운영 체제, x64 기반 프로세서",
+            "펜 및 터치 이 디스플레이에 사용할 수 있는 펜 또는 터치식 입력이 없습니다. 에디션 Windows 11 Pro",
+            "버전 25H2",
+            "설치 날짜 ‎2021-‎04-‎23",
+            "OS 빌드 26200.8037",
+            "경험 Windows 기능 경험 팩 1000.26100.300.0 VN92R-94VPC-CHXKX-3K7JH-2R4C2"
+          ],
+          "data_point_candidates": [
+            "2.80",
+            "16.0",
+            "15.7",
+            "26200.8037",
+            "1000.26100",
+            "300.0"
+          ],
+          "period_candidates": [
+            "2021"
+          ],
+          "trend_summary": "same-unit numeric labels 2.80 -> 300.0 appear to have increased; verify axis/series pairing against the source visual.",
+          "confidence": 0.48,
+          "extraction_method": "page_text_chart_like_heuristic",
+          "structured_status": "partial"
+        },
+        "structured_data_preview": "{\"type\":\"chart_like_page\",\"page_num\":1,\"chart_index\":1,\"title\":\"사번 사용자 구분 제조사 모델명 S/N 장치사양 윈도우사양 Key No. 기타 참고사항\",\"bbox\":[],\"legend_or_series_candidates\":[\"사번 사용자 구분 제조사 모델명 S\",\"N 장치사양 윈도우사양 Key No. 기타 참고사항\",\"P124 유지현 노트북 LG 15Z95N-GP79ML 108NZAU006752 장치 이름 dkwkwlgus7\",\"프로세서 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz(2.80 GHz)\",\"설치된 RAM 16.0GB(15.7GB 사용 가능)\",\"장치 ID E1FC10C3-D775-459E-8686-583B5A403F62\",\"제품 ID 00330-53797-71055-AAOEM\",\"시스템 종류 64비트 운영 체제, x64 기반 프로세서\",\"펜 및 터치 이 디스플레이에 사용할 수 있는 펜 또는 터치식 입력이 없습니다. 에디션 Windows 11 Pro\",\"버전 25H2\",\"설치 날짜 ‎2021-‎04-‎23\",\"OS 빌드 26200.8037\",\"경험 Windows 기능 경험 팩 1000.26100.300.0 VN92R-94VPC-CHXKX-3K7JH-2R4C2\"],\"data_point_candidates\":[\"2.80\",\"16.0\",\"15.7\",\"26200.8037\",\"1000.26100\",\"300.0\"],\"period_candidates\":[\"2021\"],\"trend_summary\":\"same-unit numeric labels 2.80 -> 300.0 appear to have increased; verify axis/series pairing against the source visual.\",\"confidence\":0.48,\"extraction_method\":\"page_text_chart_like_heuristic\",\"structured_status\":\"partial\"}",
+        "sparse_page": true,
+        "fallback_source": "visual_structured_extraction",
+        "split_index": 0
+      },
+      "visual_type": "chart_like_page",
+      "visual_index": 1,
+      "visual_confidence": 0.48,
+      "source_bbox": "[]",
+      "extraction_method": "page_text_chart_like_heuristic"
+    }
+  ]
+}

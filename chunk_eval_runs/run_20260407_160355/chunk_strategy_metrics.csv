@@ -1,3 +1,0 @@
-﻿strategy_name,total_chunks,total_docs,doc_coverage,page_coverage_count,empty_retrieval_text_count,avg_char_len,median_char_len,avg_token_estimate,source_block_ids_empty_count,has_table_ratio,has_chart_ratio,has_image_ratio,has_text_ratio,evidence_preview_presence_ratio,sparse_page_related_chunk_ratio,doc_chunk_count_stdev,long_chunk_count,short_chunk_count,chunk_type_distribution_json
-text_first_with_visual_support,190,8,1.0,19,0,233.0632,88.0,57.8947,0,0.1526,0.0684,0.1,1.0,1.0,0.3053,17.6263,0,113,"{""block_group"": 101, ""text"": 89}"
-llm_ready_native,865,8,1.0,19,0,150.9676,53.0,37.3503,0,0.1711,0.015,0.0254,1.0,1.0,0.0324,97.8704,0,677,"{""chart"": 13, ""image"": 22, ""native_page"": 108, ""table"": 148, ""text"": 513, ""title"": 59, ""unknown"": 2}"

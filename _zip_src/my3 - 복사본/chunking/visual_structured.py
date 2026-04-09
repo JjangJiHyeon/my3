@@ -1,0 +1,378 @@
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from .utils import block_id, block_meta, clean_text, compact_join, is_excluded_block, page_num
+
+
+VALUE_RE = re.compile(
+    r"(?<![A-Za-z0-9])"
+    r"[+-]?(?:\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)"
+    r"(?:\s?(?:%p|%|bp|bps|억원|조원|만원|원|명|개|주|배|x|pt|십억원|백만원|조|억))?",
+    re.IGNORECASE,
+)
+PERIOD_RE = re.compile(r"\b(?:[1-4]Q\d{2,4}|20\d{2}[./-]?\d{0,2})\b", re.IGNORECASE)
+CHART_HINT_RE = re.compile(
+    r"(chart|graph|trend|series|roe|bps|eps|margin|ratio|추이|그래프|차트|지표|비율|연환산|자기자본|수익률|판매관리비율)",
+    re.IGNORECASE,
+)
+UNIT_RE = re.compile(r"(%p|%|bp|bps|억원|조원|만원|원|명|개|주|배|x|pt|십억원|백만원|조|억)$", re.IGNORECASE)
+
+
+def build_visual_structured_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    records.extend(_table_records(page, blocks))
+    chart_records = _chart_records(page, blocks)
+    records.extend(chart_records)
+    if not chart_records:
+        page_record = _chart_like_page_record(page, blocks)
+        if page_record:
+            records.append(page_record)
+    return records
+
+
+def _table_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for index, block in enumerate([b for b in blocks if b.get("type") == "table"], start=1):
+        if is_excluded_block(block, for_support=True):
+            continue
+        meta = block_meta(block)
+        table = meta.get("normalized_table") if isinstance(meta.get("normalized_table"), dict) else {}
+        summary = clean_text(meta.get("table_summary") or block.get("text"))
+        markdown = clean_text(meta.get("table_markdown") or table.get("markdown"))
+        rows = meta.get("key_value_rows")
+        if not summary and not markdown:
+            continue
+        structured = {
+            "type": "table",
+            "page_num": page_num(page),
+            "table_index": index,
+            "title": _visual_title(page, block),
+            "bbox": block.get("bbox") or [],
+            "shape": table.get("shape") or meta.get("table_shape"),
+            "headers": table.get("headers") or [],
+            "rows_preview": _preview_rows(table.get("rows") or rows),
+            "confidence": _confidence(block, default=0.82),
+            "extraction_method": meta.get("table_reconstruction_method") or table.get("source") or block.get("source") or "table_block",
+        }
+        parts = [
+            "[VISUAL STRUCTURED TABLE]",
+            f"document_page: {page_num(page)}",
+            f"title: {structured['title']}",
+            f"table_index: {index}",
+            f"confidence: {structured['confidence']}",
+            f"shape: {_json_text(structured.get('shape'))}",
+            "[TABLE SUMMARY]",
+            summary,
+            "[TABLE MARKDOWN]",
+            markdown,
+        ]
+        records.append(_record(
+            chunk_type="table_summary",
+            visual_type="table",
+            visual_index=index,
+            confidence=structured["confidence"],
+            source_block_ids=[block_id(block)],
+            blocks=[block],
+            retrieval_text=compact_join(parts),
+            structured=structured,
+            source_bbox=block.get("bbox") or [],
+            extraction_method=str(structured["extraction_method"]),
+        ))
+    return records
+
+
+def _chart_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    chart_blocks = [b for b in blocks if b.get("type") == "chart"]
+    for index, block in enumerate(chart_blocks, start=1):
+        if is_excluded_block(block, for_support=True):
+            continue
+        meta = block_meta(block)
+        chart_text = clean_text(meta.get("chart_summary") or meta.get("visual_summary") or meta.get("caption_text"))
+        context_text = _context_text_for_block(page, block)
+        visual_text = compact_join([chart_text, context_text])
+        metrics = _metric_tokens(visual_text)
+        if not chart_text and len(metrics) < 2:
+            continue
+        labels = _label_candidates(compact_join([chart_text, context_text]))
+        structured = {
+            "type": "chart",
+            "page_num": page_num(page),
+            "chart_index": index,
+            "title": _visual_title(page, block),
+            "bbox": block.get("bbox") or [],
+            "legend_or_series_candidates": labels[:12],
+            "data_point_candidates": metrics[:40],
+            "period_candidates": _period_tokens(visual_text)[:20],
+            "trend_summary": _trend_summary(metrics, periods=_period_tokens(visual_text), text=visual_text),
+            "confidence": _confidence(block, default=0.72),
+            "extraction_method": block.get("source") or "chart_block_context",
+            "structured_status": "partial",
+        }
+        parts = [
+            "[VISUAL STRUCTURED CHART]",
+            f"document_page: {page_num(page)}",
+            f"title: {structured['title']}",
+            f"chart_index: {index}",
+            f"confidence: {structured['confidence']}",
+            f"structured_status: {structured['structured_status']}",
+            f"series_or_legend_candidates: {', '.join(labels[:12])}",
+            f"data_point_candidates: {', '.join(metrics[:40])}",
+            f"period_candidates: {', '.join(structured['period_candidates'])}",
+            f"trend_summary: {structured['trend_summary']}",
+            "[CHART CONTEXT]",
+            chart_text,
+            context_text,
+        ]
+        records.append(_record(
+            chunk_type="chart_summary",
+            visual_type="chart",
+            visual_index=index,
+            confidence=structured["confidence"],
+            source_block_ids=[block_id(block)],
+            blocks=[block],
+            retrieval_text=compact_join(parts),
+            structured=structured,
+            source_bbox=block.get("bbox") or [],
+            extraction_method=str(structured["extraction_method"]),
+        ))
+    return records
+
+
+def _chart_like_page_record(page: dict[str, Any], blocks: list[dict[str, Any]]) -> dict[str, Any] | None:
+    text = clean_text(page.get("rag_text") or page.get("text"))
+    if not text:
+        return None
+    metrics = _metric_tokens(text)
+    periods = _period_tokens(text)
+    has_visual = any(b.get("type") in {"chart", "image"} and not is_excluded_block(b, for_support=True) for b in blocks)
+    has_chart_hint = bool(CHART_HINT_RE.search(text))
+    if len(metrics) < 5 or not (has_visual or has_chart_hint or periods):
+        return None
+    labels = _label_candidates(text)
+    source_ids = [block_id(b) for b in blocks if b.get("type") in {"text", "title"}][:12]
+    structured = {
+        "type": "chart_like_page",
+        "page_num": page_num(page),
+        "chart_index": 1,
+        "title": _visual_title(page, {}),
+        "bbox": [],
+        "legend_or_series_candidates": labels[:16],
+        "data_point_candidates": metrics[:60],
+        "period_candidates": periods[:30],
+        "trend_summary": _trend_summary(metrics, periods=periods, text=text),
+        "confidence": 0.58 if has_chart_hint else 0.48,
+        "extraction_method": "page_text_chart_like_heuristic",
+        "structured_status": "partial",
+    }
+    parts = [
+        "[VISUAL STRUCTURED CHART-LIKE PAGE]",
+        f"document_page: {page_num(page)}",
+        f"title: {structured['title']}",
+        f"confidence: {structured['confidence']}",
+        f"structured_status: {structured['structured_status']}",
+        f"series_or_legend_candidates: {', '.join(labels[:16])}",
+        f"data_point_candidates: {', '.join(metrics[:60])}",
+        f"period_candidates: {', '.join(periods[:30])}",
+        f"trend_summary: {structured['trend_summary']}",
+        "[PAGE VISUAL CONTEXT]",
+        text[:1600],
+    ]
+    return _record(
+        chunk_type="chart_summary",
+        visual_type="chart_like_page",
+        visual_index=1,
+        confidence=structured["confidence"],
+        source_block_ids=source_ids,
+        blocks=[b for b in blocks if block_id(b) in set(source_ids)],
+        retrieval_text=compact_join(parts),
+        structured=structured,
+        source_bbox=[],
+        extraction_method=str(structured["extraction_method"]),
+    )
+
+
+def _record(
+    *,
+    chunk_type: str,
+    visual_type: str,
+    visual_index: int,
+    confidence: float,
+    source_block_ids: list[str],
+    blocks: list[dict[str, Any]],
+    retrieval_text: str,
+    structured: dict[str, Any],
+    source_bbox: list[Any],
+    extraction_method: str,
+) -> dict[str, Any]:
+    return {
+        "chunk_type": chunk_type,
+        "visual_type": visual_type,
+        "visual_index": visual_index,
+        "visual_confidence": round(float(confidence), 4),
+        "source_bbox": _json_text(source_bbox),
+        "extraction_method": extraction_method,
+        "source_block_ids": source_block_ids,
+        "blocks": blocks,
+        "retrieval_text": retrieval_text,
+        "display_text": retrieval_text,
+        "metadata": {
+            "visual_structured": structured,
+            "structured_data_preview": _json_text(structured)[:1200],
+        },
+    }
+
+
+def _context_text_for_block(page: dict[str, Any], block: dict[str, Any]) -> str:
+    meta = block_meta(block)
+    context_ids = {str(item) for item in (meta.get("context_block_ids") or [])}
+    if not context_ids:
+        return clean_text(page.get("rag_text") or page.get("text"))[:900]
+    parts = []
+    for other in page.get("blocks") or []:
+        if isinstance(other, dict) and block_id(other) in context_ids:
+            parts.append(clean_text(other.get("text")))
+    return compact_join(parts)
+
+
+def _metric_tokens(text: str) -> list[str]:
+    tokens: list[str] = []
+    seen: set[str] = set()
+    for match in VALUE_RE.finditer(text or ""):
+        token = clean_text(match.group(0))
+        if not token:
+            continue
+        if _looks_like_plain_year(token):
+            continue
+        if not _looks_metric_like(token):
+            continue
+        compact = re.sub(r"\s+", "", token)
+        if compact in seen:
+            continue
+        seen.add(compact)
+        tokens.append(token)
+    return tokens
+
+
+def _period_tokens(text: str) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for match in PERIOD_RE.finditer(text or ""):
+        token = match.group(0)
+        key = token.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(token)
+    return out
+
+
+def _label_candidates(text: str) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for line in re.split(r"[\n\r|/]+", text or ""):
+        clean = clean_text(line)
+        if len(clean) < 3 or len(clean) > 90:
+            continue
+        if not re.search(r"[A-Za-z가-힣]", clean):
+            continue
+        if len(_metric_tokens(clean)) >= 4 and len(clean) > 50:
+            continue
+        key = re.sub(r"\s+", "", clean).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        labels.append(clean)
+    return labels
+
+
+def _trend_summary(metrics: list[str], *, periods: list[str] | None = None, text: str = "") -> str:
+    numeric = [(metric, parsed[0], parsed[1]) for metric in metrics if (parsed := _parse_metric_value(metric)) is not None]
+    if len(numeric) < 2:
+        return "numeric labels were extracted, but a trend could not be inferred."
+    has_series_signal = bool(periods) or bool(re.search(r"(ROE|BPS|EPS|규제비율|판매관리비율|자기자본비율|레버리지비율)", text or "", re.IGNORECASE))
+    if not has_series_signal:
+        return "numeric labels were extracted; axis/series pairing is partial, so no trend is inferred."
+
+    unit_groups: dict[str, list[tuple[str, float, str]]] = {}
+    for item in numeric:
+        unit_groups.setdefault(item[2], []).append(item)
+    same_unit = max(unit_groups.values(), key=len)
+    if len(same_unit) < 2:
+        return "numeric labels were extracted, but units are mixed, so trend inference is partial."
+    if not periods and same_unit[0][2] not in {"%", "%p", "bp", "bps"}:
+        return "numeric labels were extracted; axis/series pairing is partial, so no trend is inferred."
+    first_token, first_value, _ = same_unit[0]
+    last_token, last_value, _ = same_unit[-1]
+    if last_value > first_value:
+        direction = "increased"
+    elif last_value < first_value:
+        direction = "decreased"
+    else:
+        direction = "was flat"
+    return f"same-unit numeric labels {first_token} -> {last_token} appear to have {direction}; verify axis/series pairing against the source visual."
+
+
+def _parse_metric_value(metric: str) -> tuple[float, str] | None:
+    compact = re.sub(r"\s+", "", metric or "")
+    number = re.search(r"[+-]?(?:\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)", compact)
+    if not number:
+        return None
+    unit_match = UNIT_RE.search(compact)
+    unit = unit_match.group(1).lower() if unit_match else ""
+    try:
+        return float(number.group(0).replace(",", "")), unit
+    except ValueError:
+        return None
+
+
+def _looks_metric_like(token: str) -> bool:
+    compact = re.sub(r"\s+", "", token)
+    if UNIT_RE.search(compact):
+        return True
+    if "," in compact:
+        return True
+    if re.fullmatch(r"[+-]?\d+\.\d+", compact):
+        return True
+    return False
+
+
+def _looks_like_plain_year(token: str) -> bool:
+    return bool(re.fullmatch(r"20\d{2}", re.sub(r"\s+", "", token or "")))
+
+
+def _preview_rows(rows: Any, limit: int = 12) -> list[Any]:
+    if not isinstance(rows, list):
+        return []
+    return rows[:limit]
+
+
+def _visual_title(page: dict[str, Any], block: dict[str, Any]) -> str:
+    meta = block_meta(block) if block else {}
+    for value in (meta.get("associated_title"), meta.get("page_title"), page.get("page_title")):
+        text = clean_text(value)
+        if text:
+            return text[:200]
+    text = clean_text(page.get("text") or page.get("rag_text"))
+    if text:
+        return text.splitlines()[0][:200]
+    return f"page {page_num(page)} visual"
+
+
+def _confidence(block: dict[str, Any], *, default: float) -> float:
+    meta = block_meta(block)
+    for value in (block.get("confidence"), meta.get("table_quality"), meta.get("overall_table_quality")):
+        try:
+            score = float(value)
+        except (TypeError, ValueError):
+            continue
+        if score > 1.0:
+            score = min(0.98, score / 10.0)
+        return round(max(0.0, min(1.0, score)), 4)
+    return default
+
+
+def _json_text(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))

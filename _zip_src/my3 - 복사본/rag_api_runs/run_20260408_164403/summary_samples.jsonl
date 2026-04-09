@@ -1,0 +1,1 @@
+{"endpoint": "/summary", "request": {"filename": "example.pdf", "strategy_name": "llm_ready_native", "top_k": 8}, "response_shape": {"mode": "summary", "title": "string", "answer": "string", "sources": [{"document": "string", "page": 0}]}}

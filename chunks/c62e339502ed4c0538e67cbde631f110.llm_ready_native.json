@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "strategy_name": "llm_ready_native",
+  "doc_id": "c62e339502ed4c0538e67cbde631f110",
+  "filename": "2026년도 IT재고실사_유지현.xlsx",
+  "filepath": "C:\\Users\\jihyeon\\Desktop\\my3\\documents\\2026년도 IT재고실사_유지현.xlsx",
+  "document_type": null,
+  "pipeline_used": null,
+  "quality_grade": "A",
+  "total_chunks": 0,
+  "issues": [
+    "empty_llm_ready_page:1"
+  ],
+  "chunks": []
+}

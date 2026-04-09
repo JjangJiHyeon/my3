@@ -1,0 +1,562 @@
+[
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B2",
+    "value": "my3 \uba40\ud2f0\ud3ec\ub9f7 \ubb38\uc11c \ud30c\uc2f1 \ubc0f RAG QA\u00b7\uc694\uc57d \uc2dc\uc2a4\ud15c \uac1c\ubc1c \uc124\uacc4\uc11c"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B4",
+    "value": "\u25a0  \ud504\ub85c\uc81d\ud2b8 \uae30\ubcf8 \uc815\ubcf4"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B5",
+    "value": "\ud504\ub85c\uc81d\ud2b8\uba85"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "C5",
+    "value": "my3 \uba40\ud2f0\ud3ec\ub9f7 \ubb38\uc11c \ud30c\uc2f1 \ubc0f RAG QA\u00b7\uc694\uc57d \uc2dc\uc2a4\ud15c"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B6",
+    "value": "\uc791\uc131\uc77c"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "C6",
+    "value": "2026-04-08"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B8",
+    "value": "\u25a0  \ud504\ub85c\uc81d\ud2b8 \ubaa9\uc801"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B9",
+    "value": "FastAPI \uae30\ubc18 app.py\uac00 \ubb38\uc11c \uad00\ub9ac API\uc640 \uc815\uc801 UI\ub97c \uc81c\uacf5\ud558\uace0, parsers \u2192 chunking \u2192 retrieval/vector_prep \u2192 chroma_store \u2192 rag_api \uc21c\uc73c\ub85c \ubaa8\ub4c8\uc744 \ubd84\ub9ac\ud55c \uad6c\uc870\uc774\ub2e4.\n\ubb38\uc11c \uc5c5\ub85c\ub4dc \uc2dc parse\u2192chunk\u2192embed\u2192ingest \ud30c\uc774\ud504\ub77c\uc778\uc73c\ub85c \ucd5c\uc2e0 \uc778\ub371\uc2a4\ub97c \uac31\uc2e0\ud558\uace0, \uc870\ud68c \uc2dc \ubcc4\ub3c4 RAG API\uac00 Chroma \uac80\uc0c9 \ud6c4 gpt-5.2\ub85c QA/\ubb38\uc11c \uc804\uccb4 \uc694\uc57d\uc744 \uc0dd\uc131\ud55c\ub2e4."
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B11",
+    "value": "\u25a0  \ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548 \ubc0f \uc6cc\ud06c\ud50c\ub85c\uc6b0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B12",
+    "value": "\uad6c\ubd84"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B13",
+    "value": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "C13",
+    "value": "\uc0c1\uc138 \uad6c\uc131\uc740 '\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548' \uc2dc\ud2b8 \ucc38\uc870.\nFastAPI(app.py) \u2192 Parser/Chunking \u2192 Vector Prep \u2192 Chroma \u2192 RAG API \u2192 Static UI \uad6c\uc870\ub85c \uad6c\uc131\ub41c\ub2e4."
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "B14",
+    "value": "\uc6cc\ud06c\ud50c\ub85c\uc6b0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uac1c\uc694",
+    "cell": "C14",
+    "value": "\uc0c1\uc138 \ud750\ub984\uc740 '\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0' \uc2dc\ud2b8 \ucc38\uc870.\n\uc5c5\ub85c\ub4dc \uc2dc parse\u2192build_chunks\u2192prepare_vectors\u2192ingest_vector_run, \uc870\ud68c \uc2dc /api/rag/qa\u00b7/summary \ud504\ub85d\uc2dc \ud638\ucd9c\uc774 \ud575\uc2ec \ud750\ub984\uc774\ub2e4."
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B2",
+    "value": "\uae30\uc220 \uc2a4\ud0dd \uc694\uc57d  &  \ubbf8\uacb0 \uc0ac\ud56d \ucd94\uc801"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B4",
+    "value": "\u25a0  \uae30\uc220 \uc2a4\ud0dd (Technical Stack)"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B5",
+    "value": "\uad6c\ubd84"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C5",
+    "value": "\uae30\uc220/\ub77c\uc774\ube0c\ub7ec\ub9ac"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D5",
+    "value": "\uc6a9\ub3c4"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E5",
+    "value": "\ube44\uace0"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B6",
+    "value": "\uc5b8\uc5b4\u00b7\ud658\uacbd"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C6",
+    "value": "Python 3.x, FastAPI, Uvicorn"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D6",
+    "value": "\ubc31\uc5d4\ub4dc API, \uc815\uc801 \ud30c\uc77c \uc11c\ube59, \uc5c5\ub85c\ub4dc/\uc0ad\uc81c job orchestration"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E6",
+    "value": "\uc608\uc2dc"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B7",
+    "value": "\ubb38\uc11c \ud30c\uc11c"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C7",
+    "value": "PyMuPDF(fitz), pdfplumber, camelot-py, pymupdf4llm"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D7",
+    "value": "PDF \ud14d\uc2a4\ud2b8\u00b7\ub808\uc774\uc544\uc6c3\u00b7\ud45c \ud30c\uc2f1"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C8",
+    "value": "python-docx, tika, olefile, openpyxl, xlrd"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D8",
+    "value": "DOC/DOCX/HWP/XLS/XLSX \ud30c\uc2f1"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B9",
+    "value": "\uccad\ud0b9"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C9",
+    "value": "EasyOCR, pytesseract, OpenCV, Pillow"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D9",
+    "value": "\uc2a4\uce94\ud615 PDF \ubc0f \uc774\ubbf8\uc9c0 \ud14d\uc2a4\ud2b8 fallback OCR"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B10",
+    "value": "\uc784\ubca0\ub529"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C10",
+    "value": "chunking/strategies.py, chunking/builders.py"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D10",
+    "value": "text_first_with_visual_support, llm_ready_native \uc0dd\uc131"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C11",
+    "value": "retrieval.vector_prep, numpy"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D11",
+    "value": "chunk metadata JSONL, vectors.npz, id_map \uc0dd\uc131"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B12",
+    "value": "\ubca1\ud130 DB"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C12",
+    "value": "OpenAI text-embedding-3-large"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D12",
+    "value": "3072\ucc28\uc6d0 \ubb38\uc11c \uccad\ud06c \uc784\ubca0\ub529"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E12",
+    "value": "\ud658\uacbd\ubcc0\uc218 \uac80\uc99d \ud3ec\ud568"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B13",
+    "value": "LLM API"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C13",
+    "value": "Chroma persistent collection(document_chunks)"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D13",
+    "value": "\ub85c\uceec \ubca1\ud130 \uc800\uc7a5\u00b7\uac80\uc0c9"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E13",
+    "value": "chroma_indexes/latest.json \uc0ac\uc6a9"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B14",
+    "value": "\uc624\ucf00\uc2a4\ud2b8\ub808\uc774\uc158"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C14",
+    "value": "LangChain, langchain-openai, langchain-chroma, ChatOpenAI(gpt-5.2)"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D14",
+    "value": "QA\u00b7\ubb38\uc11c \uc804\uccb4 \uc694\uc57d \uc751\ub2f5 \uc0dd\uc131"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B15",
+    "value": "UI"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C15",
+    "value": "static HTML/CSS/JS + FastAPI FileResponse"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D15",
+    "value": "\ubb38\uc11c \uc120\ud0dd, \uc5c5\ub85c\ub4dc, \uc0ad\uc81c, QA, \uc694\uc57d UI"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C16",
+    "value": "Python logging, latency_events.jsonl, LangSmith(optional)"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D16",
+    "value": "\uc2e4\ud589 \ub85c\uadf8 \ubc0f trace \uae30\ub85d"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E16",
+    "value": "LANGSMITH_TRACING=true \uc2dc\ub9cc trace"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B18",
+    "value": "\u26a0  \ubbf8\uacb0 \uc0ac\ud56d \ucd94\uc801 (Open Issues)"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B19",
+    "value": "\ud56d\ubaa9"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C19",
+    "value": "\ub0b4\uc6a9"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D19",
+    "value": "\ub2f4\ub2f9\uc790"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E19",
+    "value": "\ubaa9\ud45c \ud655\uc815\uc77c"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "F19",
+    "value": "\uc0c1\ud0dc"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B20",
+    "value": "OpenAI/\ubc30\ud3ec \ud658\uacbd\ubcc0\uc218 \uad00\ub9ac"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C20",
+    "value": "OPENAI_API_KEY \ubbf8\uc124\uc815 \uc2dc RAG API\uac00 \uae30\ub3d9 \ub610\ub294 \uc694\uccad \ucc98\ub9ac\uc5d0 \uc2e4\ud328\ud558\ubbc0\ub85c \ubc30\ud3ec\uc6a9 secret \uc8fc\uc785 \ubc29\uc2dd \ud655\uc815 \ud544\uc694"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D20",
+    "value": "\ud655\uc778 \ud544\uc694"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E20",
+    "value": "\ubbf8\uc815"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "F20",
+    "value": "\ubbf8\uacb0"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B21",
+    "value": "\ucd5c\uc2e0 \uc778\ub371\uc2a4 \uc120\ud589 \uad6c\ucd95"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C21",
+    "value": "chroma_indexes/latest.json \ub610\ub294 persist dir \ubd80\uc7ac \uc2dc QA/\uc694\uc57d\uc774 \uc2e4\ud328\ud558\ubbc0\ub85c \ucd08\uae30 \uc778\ub371\uc2a4 \uc0dd\uc131/\ubc30\ud3ec \uc808\ucc28 \ubb38\uc11c\ud654 \ud544\uc694"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D21",
+    "value": "\ud655\uc778 \ud544\uc694"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E21",
+    "value": "\ubbf8\uc815"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "F21",
+    "value": "\ubbf8\uacb0"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "B22",
+    "value": "\ub3d9\uc2dc\uc131/\ubca0\uc774\uc2a4\ub77c\uc778 \uc804\ub7b5 \uac80\ud1a0"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "C22",
+    "value": "\uc5c5\ub85c\ub4dc\u00b7\uc0ad\uc81c \uc778\ub371\uc2f1\uc774 index_build_lock\uc73c\ub85c \uc9c1\ub82c \ucc98\ub9ac\ub418\uba70, \uc77c\ubd80 \ubb38\uc11c\ub294 llm_ready_native chunk\uac00 0\uac74\uc774\ubbc0\ub85c \uc6b4\uc601 \uc131\ub2a5 \ubc0f baseline \ub370\uc774\ud130 \uc815\ucc45 \uac80\ud1a0 \ud544\uc694"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "D22",
+    "value": "\ud655\uc778 \ud544\uc694"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "E22",
+    "value": "\ubbf8\uc815"
+  },
+  {
+    "sheet": "\uae30\uc220 \uc2a4\ud0dd \ubc0f \ubbf8\uacb0\uc0ac\ud56d",
+    "cell": "F22",
+    "value": "\ubbf8\uacb0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B2",
+    "value": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B4",
+    "value": "\u25a0  \ud504\ub85c\uc81d\ud2b8 \ubaa9\uc801"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B5",
+    "value": "FastAPI \uc571(app.py)\uc774 \ubb38\uc11c \uc5c5\ub85c\ub4dc/\uc0ad\uc81c, \ud30c\uc2f1 \uacb0\uacfc \uc870\ud68c, \uc815\uc801 UI \uc11c\ube59\uc744 \ub2f4\ub2f9\ud558\uace0, RAG \uc804\uc6a9 API\ub294 scripts/run_rag_api.py\uc5d0\uc11c \ubcc4\ub3c4 \uc11c\ube44\uc2a4\ub85c \ub3d9\uc791\ud55c\ub2e4.\n\uc911\uac04 \uc0b0\ucd9c\ubb3c\uc740 parsed_results \u2192 chunks \u2192 vector_indexes \u2192 chroma_indexes \uc21c\uc73c\ub85c \ud30c\uc77c \uae30\ubc18\uc73c\ub85c \ub204\uc801\ub41c\ub2e4."
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B7",
+    "value": "\u25a0  \ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B8",
+    "value": "\uad6c\ubd84"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B9",
+    "value": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C9",
+    "value": "1) app.py\uac00 \ubb38\uc11c \uad00\ub9ac API\uc640 \uc815\uc801 UI\ub97c \uc81c\uacf5\n2) parsers\uac00 \uc6d0\ubb38\uc744 pages/blocks JSON\uc73c\ub85c \ubcc0\ud658\n3) chunking/retrieval\uc774 \uac80\uc0c9\uc6a9 chunk\u00b7embedding \uc0b0\ucd9c\ubb3c \uc0dd\uc131\n4) chroma_store\uac00 \ucd5c\uc2e0 \uceec\ub809\uc158 \ubc18\uc601\n5) scripts/run_rag_api.py + rag_api\uac00 QA/\uc694\uc57d \uc804\uc6a9 API \uc81c\uacf5\n6) static UI\uac00 \uc0ac\uc6a9\uc790 \uc0c1\ud638\uc791\uc6a9\uc744 \ub2f4\ub2f9"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B11",
+    "value": "\u25a0  \ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548 \uc0c1\uc138"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B12",
+    "value": "\ud30c\uc77c\uba85"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C12",
+    "value": "\uc124\uba85"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B13",
+    "value": "app.py / app_support/*"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C13",
+    "value": "FastAPI \uc9c4\uc785\uc810. \ubb38\uc11c \ubaa9\ub85d, \ub2e8\uac74/\uc77c\uad04 \ud30c\uc2f1, \uc5c5\ub85c\ub4dc/\uc0ad\uc81c job, RAG proxy, \uc815\uc801 UI/\ud488\uc9c8 \ub9ac\ud3ec\ud2b8 \ub178\ucd9c, \uc0b0\ucd9c\ubb3c cleanup/export \ubcf4\uc870 \uae30\ub2a5 \ud3ec\ud568"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B14",
+    "value": "parsers/*"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C14",
+    "value": "\ud615\uc2dd\ubcc4 \ud30c\uc11c \uacc4\uce35. PDF\ub294 \ub808\uc774\uc544\uc6c3/\ud45c/OCR \ucc98\ub9ac, DOC/DOCX\ub294 python-docx\u00b7Tika, HWP\ub294 olefile, XLS/XLSX\ub294 xlrd/openpyxl \uc0ac\uc6a9"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B15",
+    "value": "chunking/*"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C15",
+    "value": "\ud30c\uc2f1 \uacb0\uacfc\ub97c \uac80\uc0c9\uc6a9 chunk\ub85c \ubcc0\ud658. text_first_with_visual_support\uc640 llm_ready_native \uc804\ub7b5, chunk summary \ud1b5\uacc4 \uc0dd\uc131"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B16",
+    "value": "retrieval/*"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C16",
+    "value": "chunk metadata \uc815\uaddc\ud654, retrieval_text \uad6c\uc131, OpenAI \uc784\ubca0\ub529 \uc2e4\ud589, vectors.npz / JSONL / id_map \uc0b0\ucd9c\ubb3c \uc0dd\uc131"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B17",
+    "value": "chroma_store/* + scripts/run_chroma_ingest.py"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C17",
+    "value": "vector run \uc0b0\ucd9c\ubb3c\uc744 Chroma persistent collection\uc73c\ub85c \uc801\uc7ac\ud558\uace0 latest.json, id_manifest, ingest summary\ub97c \uac31\uc2e0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "B18",
+    "value": "scripts/run_rag_api.py + rag_api/* + static/*"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548",
+    "cell": "C18",
+    "value": "\ubcc4\ub3c4 RAG API(/qa,/summary), ChromaRetriever, QA/Summary chain, source formatter, LangSmith/latency \uad00\uce21, index.html/summary.html UI \uad6c\uc131"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B2",
+    "value": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B4",
+    "value": "\u25a0  \ud504\ub85c\uadf8\ub7a8 \uad6c\uc131\uc548 \ubc0f \uc6cc\ud06c\ud50c\ub85c\uc6b0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B5",
+    "value": "\uad6c\ubd84"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "C5",
+    "value": "\uc6cc\ud06c\ud50c\ub85c\uc6b0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B6",
+    "value": "\uc6cc\ud06c\ud50c\ub85c\uc6b0"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "C6",
+    "value": "1. \uc11c\ubc84 \uc2dc\uc791 \uc2dc RESULT_DIR \uce90\uc2dc warm-up \ubc0f optional cleanup \uc218\ud589\n2. \uc0ac\uc6a9\uc790\uac00 UI\uc5d0\uc11c \ubb38\uc11c\ub97c \uc5c5\ub85c\ub4dc\ud558\uba74 job_id\ub97c \uc0dd\uc131\ud558\uace0 \ubc31\uadf8\ub77c\uc6b4\ub4dc thread\uac00 parse_document\ub97c \uc2e4\ud589\n3. \uc131\uacf5 \ubb38\uc11c\ub294 parsed_results \uc800\uc7a5 \ud6c4 scripts.build_chunks \u2192 scripts.run_retrieval_prep \u2192 scripts.run_chroma_ingest \uc21c\uc73c\ub85c \ucd5c\uc2e0 \uc778\ub371\uc2a4\ub97c \uac31\uc2e0\n4. \uc0ac\uc6a9\uc790\ub294 \ubb38\uc11c \ubaa9\ub85d\uc5d0\uc11c \ub300\uc0c1 \ubb38\uc11c\ub97c \uc120\ud0dd\ud558\uace0 QA \ub610\ub294 \ubb38\uc11c \uc804\uccb4 \uc694\uc57d\uc744 \uc694\uccad\n5. app.py\uac00 /api/rag/qa\u00b7/summary \uc694\uccad\uc744 RAG API\ub85c \ud504\ub85d\uc2dc\n6. RAG API\ub294 config/latest.json\uc744 \uc77d\uace0 ChromaRetriever\ub85c \uad00\ub828 chunk\ub97c \uc870\ud68c\ud55c \ub4a4 gpt-5.2\ub85c \ub2f5\ubcc0/\uc694\uc57d \uc0dd\uc131\n7. \uc751\ub2f5\uc740 title/answer/sources \ud615\ud0dc\ub85c UI\uc5d0 \ud45c\uc2dc\ub418\uace0, latency_events.jsonl \ubc0f \uc120\ud0dd\uc801 LangSmith trace\uc5d0 \uae30\ub85d\n8. \ubb38\uc11c \uc0ad\uc81c \uc694\uccad \uc2dc \uad00\ub828 \ubb38\uc11c/\uc0b0\ucd9c\ubb3c\uc744 stage \ud6c4 \uc81c\uac70\ud558\uace0 \uc778\ub371\uc2a4\ub97c \ub2e4\uc2dc \ube4c\ub4dc"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B8",
+    "value": "\u25a0  \uae30\ub2a5\ubcc4 \uc124\uba85"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B9",
+    "value": "\uae30\ub2a5"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "C9",
+    "value": "\uc124\uba85"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B10",
+    "value": "\uc5c5\ub85c\ub4dc\u00b7\uc778\ub371\uc2f1"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "C10",
+    "value": "upload_rag_document \u2192 _process_upload_job \u2192 parse_document \u2192 build_chunks \u2192 prepare_vectors \u2192 ingest_vector_run. \uc9c4\ud589\ub960(progress/message)\uc640 \uc0c1\ud0dc(queued/running/completed/failed)\ub97c polling\uc73c\ub85c \uc870\ud68c"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B11",
+    "value": "QA\u00b7\ubb38\uc11c \uc804\uccb4 \uc694\uc57d"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "C11",
+    "value": "rag_qa / rag_summary \u2192 _rag_api_post \u2192 scripts.run_rag_api FastAPI. QA\ub294 query+filename_filter+top_k, Summary\ub294 filename+top_k \uae30\ubc18\uc774\uba70 \uc751\ub2f5\uc740 sources(document,page)\ub97c \ud3ec\ud568"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "B12",
+    "value": "\uc0ad\uc81c\u00b7\ud488\uc9c8 \ubaa8\ub2c8\ud130\ub9c1"
+  },
+  {
+    "sheet": "\ud504\ub85c\uadf8\ub7a8 \uc6cc\ud06c\ud50c\ub85c\uc6b0",
+    "cell": "C12",
+    "value": "delete_rag_document \u2192 _process_delete_job\uc73c\ub85c \ubb38\uc11c \ubc0f managed artifacts\ub97c \uc815\ub9ac\ud55c \ud6c4 \ucd5c\uc2e0 \uc778\ub371\uc2a4\ub97c \uc7ac\uc0dd\uc131\ud55c\ub2e4. /prototype-summary \ud654\uba74\uc5d0\uc11c\ub294 quality score, failure source, report markdown\uc744 \uc870\ud68c"
+  }
+]

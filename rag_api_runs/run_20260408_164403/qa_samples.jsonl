@@ -1,0 +1,1 @@
+{"endpoint": "/qa", "request": {"query": "문서의 핵심 내용을 알려줘", "strategy_name": "llm_ready_native", "top_k": 5}, "response_shape": {"mode": "qa", "title": "string", "answer": "string", "sources": [{"document": "string", "page": 0}]}}
