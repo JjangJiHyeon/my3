@@ -21,6 +21,11 @@ CHART_HINT_RE = re.compile(
 UNIT_RE = re.compile(r"(%p|%|bp|bps|억원|조원|만원|원|명|개|주|배|x|pt|십억원|백만원|조|억)$", re.IGNORECASE)
 
 
+PHONEISH_RE = re.compile(r"(?:\+?\d[\d\s().-]{6,}\d)")
+EMAILISH_RE = re.compile(r"\b[^@\s]+@[^@\s]+\.[^@\s]+\b")
+URLISH_RE = re.compile(r"\b(?:https?://|www\.)\S+\b", re.IGNORECASE)
+
+
 def build_visual_structured_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     records.extend(_table_records(page, blocks))
@@ -43,7 +48,10 @@ def _table_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
         summary = clean_text(meta.get("table_summary") or block.get("text"))
         markdown = clean_text(meta.get("table_markdown") or table.get("markdown"))
         rows = meta.get("key_value_rows")
-        if not summary and not markdown:
+        row_preview = _preview_rows(table.get("rows") or rows)
+        if not summary and not markdown and not row_preview:
+            continue
+        if not _should_emit_table_record(block, summary=summary, markdown=markdown, rows=row_preview, table=table):
             continue
         structured = {
             "type": "table",
@@ -53,7 +61,7 @@ def _table_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
             "bbox": block.get("bbox") or [],
             "shape": table.get("shape") or meta.get("table_shape"),
             "headers": table.get("headers") or [],
-            "rows_preview": _preview_rows(table.get("rows") or rows),
+            "rows_preview": row_preview,
             "confidence": _confidence(block, default=0.82),
             "extraction_method": meta.get("table_reconstruction_method") or table.get("source") or block.get("source") or "table_block",
         }
@@ -95,7 +103,8 @@ def _chart_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
         context_text = _context_text_for_block(page, block)
         visual_text = compact_join([chart_text, context_text])
         metrics = _metric_tokens(visual_text)
-        if not chart_text and len(metrics) < 2:
+        periods = _period_tokens(visual_text)
+        if not _should_emit_chart_record(block, chart_text=chart_text, context_text=context_text, metrics=metrics, periods=periods):
             continue
         labels = _label_candidates(compact_join([chart_text, context_text]))
         structured = {
@@ -106,8 +115,8 @@ def _chart_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
             "bbox": block.get("bbox") or [],
             "legend_or_series_candidates": labels[:12],
             "data_point_candidates": metrics[:40],
-            "period_candidates": _period_tokens(visual_text)[:20],
-            "trend_summary": _trend_summary(metrics, periods=_period_tokens(visual_text), text=visual_text),
+            "period_candidates": periods[:20],
+            "trend_summary": _trend_summary(metrics, periods=periods, text=visual_text),
             "confidence": _confidence(block, default=0.72),
             "extraction_method": block.get("source") or "chart_block_context",
             "structured_status": "partial",
@@ -150,9 +159,9 @@ def _chart_like_page_record(page: dict[str, Any], blocks: list[dict[str, Any]]) 
     periods = _period_tokens(text)
     has_visual = any(b.get("type") in {"chart", "image"} and not is_excluded_block(b, for_support=True) for b in blocks)
     has_chart_hint = bool(CHART_HINT_RE.search(text))
-    if len(metrics) < 5 or not (has_visual or has_chart_hint or periods):
-        return None
     labels = _label_candidates(text)
+    if not _should_emit_chart_like_page(text=text, metrics=metrics, periods=periods, labels=labels, has_visual=has_visual, has_chart_hint=has_chart_hint):
+        return None
     source_ids = [block_id(b) for b in blocks if b.get("type") in {"text", "title"}][:12]
     structured = {
         "type": "chart_like_page",
@@ -255,6 +264,158 @@ def _metric_tokens(text: str) -> list[str]:
         seen.add(compact)
         tokens.append(token)
     return tokens
+
+
+def _text_richness(text: str) -> dict[str, int]:
+    clean = clean_text(text)
+    lines = [line for line in clean.splitlines() if clean_text(line)]
+    return {
+        "chars": len(clean),
+        "lines": len(lines),
+        "metrics": len(_metric_tokens(clean)),
+        "periods": len(_period_tokens(clean)),
+        "labels": len(_label_candidates(clean)),
+    }
+
+
+def _looks_contactish(text: str) -> bool:
+    clean = clean_text(text)
+    if len(clean) > 260:
+        return False
+    lines = [line for line in clean.splitlines() if clean_text(line)]
+    structured_lines = sum(1 for line in lines if ":" in line or "|" in line)
+    contact_signals = len(PHONEISH_RE.findall(clean)) + len(EMAILISH_RE.findall(clean)) + len(URLISH_RE.findall(clean))
+    return contact_signals >= 1 and structured_lines >= 1 and len(_metric_tokens(clean)) <= 2
+
+
+def _row_signal(rows: list[Any]) -> int:
+    signal = 0
+    for row in rows[:8]:
+        if isinstance(row, dict):
+            item = clean_text(row.get("item"))
+            values = clean_text(row.get("values"))
+            if item and values:
+                signal += 2
+            elif item or values:
+                signal += 1
+        elif isinstance(row, (list, tuple)):
+            cells = [clean_text(x) for x in row if clean_text(x)]
+            if len(cells) >= 3:
+                signal += 2
+            elif len(cells) == 2:
+                signal += 1
+    return signal
+
+
+def _should_emit_table_record(
+    block: dict[str, Any],
+    *,
+    summary: str,
+    markdown: str,
+    rows: list[Any],
+    table: dict[str, Any],
+) -> bool:
+    richness = _text_richness(compact_join([summary, markdown]))
+    row_signal = _row_signal(rows)
+    headers = table.get("headers") if isinstance(table.get("headers"), list) else []
+    shape = table.get("shape")
+    score = 0
+    if richness["chars"] >= 120:
+        score += 2
+    elif richness["chars"] >= 70:
+        score += 1
+    if richness["metrics"] >= 4:
+        score += 2
+    elif richness["metrics"] >= 2:
+        score += 1
+    if row_signal >= 4:
+        score += 2
+    elif row_signal >= 2:
+        score += 1
+    if markdown.count("|") >= 10 or markdown.count("\n") >= 4:
+        score += 1
+    if len(headers) >= 2:
+        score += 1
+    if isinstance(shape, (list, tuple)) and len(shape) >= 2:
+        try:
+            if int(shape[0]) >= 3 and int(shape[1]) >= 2:
+                score += 1
+        except (TypeError, ValueError):
+            pass
+    if _looks_contactish(compact_join([summary, markdown])):
+        score -= 4
+    if richness["chars"] < 45 and row_signal < 2:
+        score -= 2
+    return score >= 4
+
+
+def _should_emit_chart_record(
+    block: dict[str, Any],
+    *,
+    chart_text: str,
+    context_text: str,
+    metrics: list[str],
+    periods: list[str],
+) -> bool:
+    combined = compact_join([chart_text, context_text])
+    richness = _text_richness(combined)
+    labels = _label_candidates(combined)
+    score = 0
+    if len(clean_text(chart_text)) >= 80:
+        score += 2
+    elif clean_text(chart_text):
+        score += 1
+    if len(metrics) >= 4:
+        score += 2
+    elif len(metrics) >= 2:
+        score += 1
+    if len(periods) >= 2:
+        score += 2
+    elif len(periods) == 1:
+        score += 1
+    if len(labels) >= 2:
+        score += 1
+    if richness["chars"] >= 140:
+        score += 1
+    if _looks_contactish(combined):
+        score -= 4
+    if len(metrics) <= 1 and len(periods) == 0:
+        score -= 3
+    if len(labels) >= 4 and len(metrics) == 0 and len(periods) == 0:
+        score -= 3
+    return score >= 4
+
+
+def _should_emit_chart_like_page(
+    *,
+    text: str,
+    metrics: list[str],
+    periods: list[str],
+    labels: list[str],
+    has_visual: bool,
+    has_chart_hint: bool,
+) -> bool:
+    richness = _text_richness(text)
+    if not (has_visual or has_chart_hint):
+        return False
+    score = 0
+    if len(metrics) >= 6:
+        score += 3
+    elif len(metrics) >= 4:
+        score += 2
+    if len(periods) >= 2:
+        score += 2
+    elif len(periods) == 1:
+        score += 1
+    if len(labels) >= 3:
+        score += 1
+    if richness["chars"] >= 220:
+        score += 1
+    if has_chart_hint:
+        score += 1
+    if _looks_contactish(text):
+        score -= 4
+    return score >= 5
 
 
 def _period_tokens(text: str) -> list[str]:

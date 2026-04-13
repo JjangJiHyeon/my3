@@ -13,7 +13,12 @@ from .observability import is_langsmith_enabled, langsmith_project_name
 GPT_MODEL = "gpt-5.2"
 EMBEDDING_MODEL = "text-embedding-3-large"
 EMBEDDING_DIMENSIONS = 3072
-DEFAULT_STRATEGY_NAME = "llm_ready_native"
+DEFAULT_STRATEGY_NAME = "text_first_with_visual_support"
+QA_VECTOR_CANDIDATE_K = 20
+QA_KEYWORD_CANDIDATE_K = 20
+QA_FUSED_CANDIDATE_K = 30
+QA_FINAL_TOP_K = 5
+QA_RRF_K = 60
 
 
 @dataclass(frozen=True)
@@ -25,6 +30,13 @@ class RagApiConfig:
     embedding_dimensions: int = EMBEDDING_DIMENSIONS
     chroma_root: Path | None = None
     latest_index_path: Path | None = None
+    keyword_root: Path | None = None
+    latest_keyword_index_path: Path | None = None
+    qa_vector_candidate_k: int = QA_VECTOR_CANDIDATE_K
+    qa_keyword_candidate_k: int = QA_KEYWORD_CANDIDATE_K
+    qa_fused_candidate_k: int = QA_FUSED_CANDIDATE_K
+    qa_final_top_k: int = QA_FINAL_TOP_K
+    qa_rrf_k: int = QA_RRF_K
     run_dir: Path | None = None
     langsmith_enabled: bool = False
     langsmith_project: str = "my3-rag"
@@ -53,6 +65,17 @@ def _env_value(key: str, dotenv_values: dict[str, str], default: str | None = No
     return os.environ.get(key) or dotenv_values.get(key) or default
 
 
+def _env_int(key: str, dotenv_values: dict[str, str], default: int, minimum: int = 1) -> int:
+    raw_value = _env_value(key, dotenv_values, str(default))
+    try:
+        value = int(raw_value or default)
+    except ValueError as exc:
+        raise RagApiConfigError(f"{key} must be an integer.") from exc
+    if value < minimum:
+        raise RagApiConfigError(f"{key} must be >= {minimum}.")
+    return value
+
+
 def load_config(project_root: Path | None = None, run_dir: Path | None = None) -> RagApiConfig:
     root = (project_root or Path(__file__).resolve().parents[1]).resolve()
     dotenv_values = _read_dotenv(root)
@@ -79,6 +102,13 @@ def load_config(project_root: Path | None = None, run_dir: Path | None = None) -
 
     chroma_root = root / "chroma_indexes"
     latest_index_path = chroma_root / "latest.json"
+    keyword_root = root / "keyword_indexes"
+    latest_keyword_index_path = keyword_root / "latest.json"
+    qa_vector_candidate_k = _env_int("QA_VECTOR_CANDIDATE_K", dotenv_values, QA_VECTOR_CANDIDATE_K)
+    qa_keyword_candidate_k = _env_int("QA_KEYWORD_CANDIDATE_K", dotenv_values, QA_KEYWORD_CANDIDATE_K)
+    qa_fused_candidate_k = _env_int("QA_FUSED_CANDIDATE_K", dotenv_values, QA_FUSED_CANDIDATE_K)
+    qa_final_top_k = _env_int("QA_FINAL_TOP_K", dotenv_values, QA_FINAL_TOP_K)
+    qa_rrf_k = _env_int("QA_RRF_K", dotenv_values, QA_RRF_K)
     return RagApiConfig(
         project_root=root,
         openai_api_key=api_key,
@@ -87,6 +117,13 @@ def load_config(project_root: Path | None = None, run_dir: Path | None = None) -
         embedding_dimensions=embedding_dimensions,
         chroma_root=chroma_root,
         latest_index_path=latest_index_path,
+        keyword_root=keyword_root,
+        latest_keyword_index_path=latest_keyword_index_path,
+        qa_vector_candidate_k=qa_vector_candidate_k,
+        qa_keyword_candidate_k=qa_keyword_candidate_k,
+        qa_fused_candidate_k=qa_fused_candidate_k,
+        qa_final_top_k=qa_final_top_k,
+        qa_rrf_k=qa_rrf_k,
         run_dir=run_dir,
         langsmith_enabled=is_langsmith_enabled(),
         langsmith_project=langsmith_project_name(),
@@ -120,6 +157,35 @@ def resolve_collection_name(latest: dict[str, Any]) -> str | None:
     manifest = latest.get("manifest") if isinstance(latest.get("manifest"), dict) else {}
     value = latest.get("collection_name") or manifest.get("collection_name") or manifest.get("chroma_collection_name")
     return str(value) if value else None
+
+
+def load_latest_keyword_index(config: RagApiConfig) -> dict[str, Any] | None:
+    latest_path = config.latest_keyword_index_path
+    if latest_path is None or not latest_path.exists():
+        return None
+
+    with latest_path.open("r", encoding="utf-8") as handle:
+        latest = json.load(handle)
+
+    manifest_path = _resolve_index_path(config.project_root, latest.get("manifest_path"), "keyword_indexes", latest.get("run_id"))
+    if manifest_path and manifest_path.exists():
+        with manifest_path.open("r", encoding="utf-8") as handle:
+            latest["manifest"] = json.load(handle)
+    return latest
+
+
+def resolve_keyword_doc_store_path(config: RagApiConfig, latest: dict[str, Any]) -> Path:
+    path = _resolve_index_path(config.project_root, latest.get("doc_store_path"), "keyword_indexes", latest.get("run_id"))
+    if path and path.exists():
+        return path
+    raise RagApiConfigError("Could not resolve keyword doc_store path from keyword_indexes/latest.json.")
+
+
+def resolve_keyword_inverted_index_path(config: RagApiConfig, latest: dict[str, Any]) -> Path:
+    path = _resolve_index_path(config.project_root, latest.get("inverted_index_path"), "keyword_indexes", latest.get("run_id"))
+    if path and path.exists():
+        return path
+    raise RagApiConfigError("Could not resolve keyword inverted index path from keyword_indexes/latest.json.")
 
 
 def _resolve_index_path(

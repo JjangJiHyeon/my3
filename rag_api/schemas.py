@@ -11,14 +11,14 @@ from .config import DEFAULT_STRATEGY_NAME
 
 class QARequest(BaseModel):
     query: str = Field(..., min_length=1)
-    strategy_name: str = DEFAULT_STRATEGY_NAME
+    strategy_name: str = Field(default=DEFAULT_STRATEGY_NAME)
     top_k: int = Field(default=5, ge=1, le=30)
     filename_filter: str | None = None
 
 
 class SummaryRequest(BaseModel):
     filename: str = Field(..., min_length=1)
-    strategy_name: str = DEFAULT_STRATEGY_NAME
+    strategy_name: str = Field(default=DEFAULT_STRATEGY_NAME)
     top_k: int = Field(default=8, ge=1, le=50)
 
 
@@ -32,4 +32,3 @@ class RagResponse(BaseModel):
     title: str
     answer: str
     sources: list[Source]
-

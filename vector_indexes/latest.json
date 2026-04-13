@@ -1,8 +1,8 @@
 {
-  "run_id": "run_20260409_104213",
-  "run_dir": "vector_indexes/run_20260409_104213",
-  "manifest_path": "vector_indexes/run_20260409_104213/run_manifest.json",
-  "metadata_path": "vector_indexes/run_20260409_104213/chunk_metadata_records.jsonl",
-  "vectors_path": "vector_indexes/run_20260409_104213/vectors.npz",
-  "id_map_path": "vector_indexes/run_20260409_104213/id_map.json"
+  "run_id": "run_20260410_173521",
+  "run_dir": "vector_indexes/run_20260410_173521",
+  "manifest_path": "vector_indexes/run_20260410_173521/run_manifest.json",
+  "metadata_path": "vector_indexes/run_20260410_173521/chunk_metadata_records.jsonl",
+  "vectors_path": "vector_indexes/run_20260410_173521/vectors.npz",
+  "id_map_path": "vector_indexes/run_20260410_173521/id_map.json"
 }

@@ -1,10 +1,10 @@
 {
-  "run_id": "run_20260409_104216",
-  "run_dir": "chroma_indexes/run_20260409_104216",
+  "run_id": "run_20260410_173524",
+  "run_dir": "chroma_indexes/run_20260410_173524",
   "collection_name": "document_chunks",
-  "persist_path": "chroma_indexes/run_20260409_104216/chroma",
-  "manifest_path": "chroma_indexes/run_20260409_104216/run_manifest.json",
-  "ingest_summary_path": "chroma_indexes/run_20260409_104216/ingest_summary.json",
-  "id_manifest_path": "chroma_indexes/run_20260409_104216/id_manifest.json",
-  "source_vector_run_id": "run_20260409_104213"
+  "persist_path": "chroma_indexes/run_20260410_173524/chroma",
+  "manifest_path": "chroma_indexes/run_20260410_173524/run_manifest.json",
+  "ingest_summary_path": "chroma_indexes/run_20260410_173524/ingest_summary.json",
+  "id_manifest_path": "chroma_indexes/run_20260410_173524/id_manifest.json",
+  "source_vector_run_id": "run_20260410_173521"
 }

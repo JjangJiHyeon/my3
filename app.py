@@ -23,12 +23,13 @@ import uuid
 from collections import Counter
 from contextlib import asynccontextmanager
 from datetime import datetime
+from html import escape as html_escape
 from pathlib import Path, PureWindowsPath
 from typing import Any
 from urllib import error, request
 
 from fastapi import File, FastAPI, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app_support.artifact_cleanup import cleanup_generated_artifacts
@@ -51,10 +52,33 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 CLEAN_GENERATED_ON_STARTUP: bool = (
     os.getenv("CLEAN_GENERATED_ON_STARTUP", os.getenv("DEV_CLEAR_RESULTS_ON_START", "0")) == "1"
 )
+CLEAR_VIEWER_CACHE_ON_STARTUP: bool = os.getenv("CLEAR_VIEWER_CACHE_ON_STARTUP", "0") == "1"
 RAG_API_BASE_URL = os.getenv("RAG_API_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+ENABLE_HWP_PDF_SIDECAR: bool = os.getenv("ENABLE_HWP_PDF_SIDECAR", "0") == "1"
+LIBREOFFICE_BIN: str = os.getenv("LIBREOFFICE_BIN", "").strip()
+HWP_CONVERTER_SCRIPT = PROJECT_ROOT / "convert_hwp.py"
+DEFAULT_HWP_PROFILE_DIR = PROJECT_ROOT / "_tmp_lo_unopkg_profile"
 
 os.makedirs(DOC_DIR, exist_ok=True)
 os.makedirs(RESULT_DIR, exist_ok=True)
+
+if not os.getenv("HWP_LIBREOFFICE_PROFILE", "").strip():
+    DEFAULT_HWP_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    os.environ["HWP_LIBREOFFICE_PROFILE"] = str(DEFAULT_HWP_PROFILE_DIR)
+
+
+def _clear_viewer_cache_files() -> None:
+    previews_dir = Path(RESULT_DIR) / "previews"
+    if previews_dir.exists():
+        try:
+            shutil.rmtree(previews_dir)
+            logger.info("Cleared viewer cache directory %s", previews_dir)
+        except OSError as exc:
+            logger.warning("Could not clear viewer cache directory %s: %s", previews_dir, exc)
+    try:
+        previews_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning("Could not recreate viewer cache directory %s: %s", previews_dir, exc)
 
 
 @asynccontextmanager
@@ -73,11 +97,16 @@ async def lifespan(application: FastAPI):
             parsed_results_dir=Path(RESULT_DIR),
         )
         parsed_cache.clear()
+    elif CLEAR_VIEWER_CACHE_ON_STARTUP:
+        logger.info("CLEAR_VIEWER_CACHE_ON_STARTUP: clearing viewer cache artifacts")
+        _clear_viewer_cache_files()
 
     _warm_cache()
+    hwp_sidecar_failure_cache.clear()
     logger.info("DOC_DIR    = %s", DOC_DIR)
     logger.info("RESULT_DIR = %s", RESULT_DIR)
     logger.info("CLEAN_GENERATED_ON_STARTUP = %s", CLEAN_GENERATED_ON_STARTUP)
+    logger.info("CLEAR_VIEWER_CACHE_ON_STARTUP = %s", CLEAR_VIEWER_CACHE_ON_STARTUP)
     yield
 
 
@@ -88,6 +117,43 @@ parsed_cache: dict[str, dict[str, Any]] = {}
 upload_jobs: dict[str, dict[str, Any]] = {}
 upload_jobs_lock = threading.Lock()
 index_build_lock = threading.Lock()
+rag_response_cache_lock = threading.Lock()
+hwp_sidecar_failure_cache: set[str] = set()
+summary_response_cache: dict[tuple[str, str, str], dict[str, Any]] = {}
+qa_response_cache: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+
+
+def _summary_cache_key(payload: dict[str, Any]) -> tuple[str, str, str]:
+    return (
+        str(payload.get("filename") or "").strip(),
+        str(payload.get("strategy_name") or "").strip(),
+        str(payload.get("top_k") or "").strip(),
+    )
+
+
+def _qa_cache_key(payload: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(payload.get("filename_filter") or "").strip(),
+        str(payload.get("query") or "").strip(),
+        str(payload.get("strategy_name") or "").strip(),
+        str(payload.get("top_k") or "").strip(),
+    )
+
+
+def _invalidate_rag_response_cache(*, filename: str | None = None) -> None:
+    with rag_response_cache_lock:
+        if not filename:
+            summary_response_cache.clear()
+            qa_response_cache.clear()
+            return
+
+        normalized = filename.strip()
+        for key in list(summary_response_cache.keys()):
+            if key[0] == normalized:
+                summary_response_cache.pop(key, None)
+        for key in list(qa_response_cache.keys()):
+            if key[0] == normalized:
+                qa_response_cache.pop(key, None)
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -98,6 +164,927 @@ def _doc_id(filepath: str) -> str:
 
 def _result_path(doc_id: str) -> Path:
     return Path(RESULT_DIR) / f"{doc_id}.json"
+
+
+def _preview_path(doc_id: str, page_num: int) -> Path:
+    return Path(RESULT_DIR) / "previews" / doc_id / f"page_{page_num}.png"
+
+
+def _preview_dir(doc_id: str) -> Path:
+    return Path(RESULT_DIR) / "previews" / doc_id
+
+
+def _stitched_preview_path(doc_id: str) -> Path:
+    return _preview_dir(doc_id) / "stitched_horizontal.png"
+
+
+def _sidecar_pdf_path(doc_id: str) -> Path:
+    return _preview_dir(doc_id) / "source.pdf"
+
+
+def _existing_sidecar_pdf(doc_id: str) -> Path | None:
+    sidecar_path = _sidecar_pdf_path(doc_id)
+    if sidecar_path.is_file():
+        return sidecar_path
+    preview_dir = _preview_dir(doc_id)
+    if not preview_dir.exists():
+        return None
+    pdf_candidates = sorted(
+        (candidate for candidate in preview_dir.glob("*.pdf") if candidate.is_file()),
+        key=lambda candidate: candidate.stat().st_mtime,
+        reverse=True,
+    )
+    return pdf_candidates[0] if pdf_candidates else None
+
+
+def _parsed_doc_id(parsed: dict[str, Any]) -> str:
+    doc_id = str(parsed.get("id") or "").strip()
+    if doc_id:
+        return doc_id
+    filepath = str(parsed.get("filepath") or "").strip()
+    return _doc_id(filepath) if filepath else ""
+
+
+def _sidecar_pdf_enabled(file_type: str) -> bool:
+    normalized = str(file_type or "").lower()
+    if normalized in {"doc", "docx", "xls", "xlsx", "hwp"}:
+        return True
+    return False
+
+
+def _viewer_sidecar_generation_allowed(file_type: str) -> bool:
+    return str(file_type or "").lower() in {"doc", "docx", "xls", "xlsx", "hwp"}
+
+
+def _resolve_libreoffice_bin() -> Path | None:
+    candidates = [
+        LIBREOFFICE_BIN,
+        shutil.which("soffice.exe"),
+        shutil.which("soffice"),
+        str(Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) / "LibreOffice" / "program" / "soffice.exe"),
+        str(
+            Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)"))
+            / "LibreOffice"
+            / "program"
+            / "soffice.exe"
+        ),
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        candidate_path = Path(str(candidate))
+        if candidate_path.is_file():
+            if candidate_path.suffix.lower() == ".com":
+                exe_candidate = candidate_path.with_suffix(".exe")
+                if exe_candidate.is_file():
+                    return exe_candidate
+            return candidate_path
+        resolved = shutil.which(str(candidate))
+        if resolved:
+            resolved_path = Path(resolved)
+            if resolved_path.suffix.lower() == ".com":
+                exe_candidate = resolved_path.with_suffix(".exe")
+                if exe_candidate.is_file():
+                    return exe_candidate
+            return resolved_path
+    return None
+
+
+def _clear_generated_previews(doc_id: str) -> None:
+    preview_dir = _preview_dir(doc_id)
+    if not preview_dir.exists():
+        return
+    for path in preview_dir.glob("page_*.png"):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            continue
+        except Exception as exc:
+            logger.warning("Could not remove stale preview %s: %s", path, exc)
+    stitched_path = _stitched_preview_path(doc_id)
+    try:
+        if stitched_path.exists():
+            stitched_path.unlink()
+    except FileNotFoundError:
+        pass
+    except Exception as exc:
+        logger.warning("Could not remove stitched preview %s: %s", stitched_path, exc)
+
+
+def _libreoffice_run_environment(soffice_path: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    for key in (
+        "PYTHONHOME",
+        "PYTHONPATH",
+        "PYTHONEXECUTABLE",
+        "VIRTUAL_ENV",
+        "CONDA_PREFIX",
+        "CONDA_DEFAULT_ENV",
+    ):
+        env.pop(key, None)
+    env["PATH"] = str(soffice_path.parent) + os.pathsep + env.get("PATH", "")
+    return env
+
+
+def _libreoffice_subprocess_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    if os.name == "nt":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        kwargs["startupinfo"] = startupinfo
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return kwargs
+
+
+def _maybe_create_hwp_sidecar_pdf(parsed: dict[str, Any]) -> Path | None:
+    file_type = str(parsed.get("file_type") or "").lower()
+    if file_type != "hwp":
+        return None
+
+    filepath = str(parsed.get("filepath") or "").strip()
+    source_path = Path(filepath) if filepath else None
+    if source_path is None or not source_path.is_file():
+        return None
+
+    doc_id = _parsed_doc_id(parsed)
+    if not doc_id:
+        return None
+
+    existing_pdf = _existing_sidecar_pdf(doc_id)
+    try:
+        if existing_pdf is not None and existing_pdf.stat().st_mtime >= source_path.stat().st_mtime:
+            return existing_pdf
+    except Exception:
+        pass
+
+    if doc_id in hwp_sidecar_failure_cache:
+        return None
+
+    if not HWP_CONVERTER_SCRIPT.is_file():
+        logger.warning("HWP converter script not found: %s", HWP_CONVERTER_SCRIPT)
+        return None
+
+    preview_dir = _preview_dir(doc_id)
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    legacy_failure_marker = preview_dir / ".sidecar_failed"
+    try:
+        if legacy_failure_marker.exists():
+            legacy_failure_marker.unlink()
+    except Exception:
+        pass
+    output_path = _sidecar_pdf_path(doc_id)
+
+    command = [
+        sys.executable,
+        str(HWP_CONVERTER_SCRIPT),
+        str(source_path.resolve()),
+        str(output_path.resolve()),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+            check=False,
+            **_libreoffice_subprocess_kwargs(),
+        )
+    except Exception as exc:
+        logger.warning("HWP sidecar conversion failed for %s: %s", source_path.name, exc)
+        return None
+
+    if completed.returncode != 0 or not output_path.is_file():
+        detail = (completed.stderr or completed.stdout or "").strip()
+        hwp_sidecar_failure_cache.add(doc_id)
+        logger.warning(
+            "HWP sidecar conversion returned %s for %s: %s",
+            completed.returncode,
+            source_path.name,
+            detail,
+        )
+        return None
+
+    hwp_sidecar_failure_cache.discard(doc_id)
+    _clear_generated_previews(doc_id)
+    return output_path
+
+
+def _maybe_create_sidecar_pdf(parsed: dict[str, Any]) -> Path | None:
+    file_type = str(parsed.get("file_type") or "").lower()
+    if file_type == "hwp":
+        return _maybe_create_hwp_sidecar_pdf(parsed)
+    if not _sidecar_pdf_enabled(file_type):
+        return None
+
+    filepath = str(parsed.get("filepath") or "").strip()
+    source_path = Path(filepath) if filepath else None
+    if source_path is None or not source_path.is_file():
+        return None
+
+    doc_id = _parsed_doc_id(parsed)
+    if not doc_id:
+        return None
+
+    sidecar_path = _sidecar_pdf_path(doc_id)
+    existing_pdf = _existing_sidecar_pdf(doc_id)
+    try:
+        if existing_pdf is not None and existing_pdf.stat().st_mtime >= source_path.stat().st_mtime:
+            return existing_pdf
+    except Exception:
+        pass
+
+    soffice_path = _resolve_libreoffice_bin()
+    if soffice_path is None:
+        logger.warning("LibreOffice headless executable not found for sidecar conversion: %s", source_path.name)
+        return None
+
+    preview_dir = _preview_dir(doc_id)
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    profile_dir = preview_dir / ".lo_profile"
+    profile_dir.mkdir(parents=True, exist_ok=True)
+
+    produced_pdf = preview_dir / f"{source_path.stem}.pdf"
+    command = [
+        str(soffice_path),
+        "--headless",
+        "--invisible",
+        "--nologo",
+        "--nodefault",
+        "--nolockcheck",
+        "--norestore",
+        f"-env:UserInstallation={profile_dir.resolve().as_uri()}",
+        "--convert-to",
+        "pdf",
+        "--outdir",
+        str(preview_dir.resolve()),
+        str(source_path.resolve()),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(soffice_path.parent),
+            env=_libreoffice_run_environment(soffice_path),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+            check=False,
+            **_libreoffice_subprocess_kwargs(),
+        )
+    except Exception as exc:
+        logger.warning("LibreOffice sidecar conversion failed for %s: %s", source_path.name, exc)
+        return None
+
+    if not produced_pdf.is_file():
+        pdf_candidates = sorted(
+            (
+                candidate
+                for candidate in preview_dir.glob("*.pdf")
+                if candidate.name.lower() != sidecar_path.name.lower()
+            ),
+            key=lambda candidate: candidate.stat().st_mtime,
+            reverse=True,
+        )
+        if pdf_candidates:
+            produced_pdf = pdf_candidates[0]
+
+    if not produced_pdf.is_file():
+        detail = (completed.stderr or completed.stdout or "").strip()
+        logger.warning("LibreOffice sidecar conversion did not produce a PDF for %s", source_path.name)
+        if completed.returncode != 0 or detail:
+            logger.warning(
+                "LibreOffice sidecar conversion returned %s for %s: %s",
+                completed.returncode,
+                source_path.name,
+                detail,
+            )
+        return None
+
+    final_pdf_path = produced_pdf
+    try:
+        if produced_pdf.resolve() != sidecar_path.resolve():
+            if sidecar_path.exists():
+                sidecar_path.unlink()
+            shutil.move(str(produced_pdf), str(sidecar_path))
+            final_pdf_path = sidecar_path
+    except Exception as exc:
+        logger.warning("Could not normalize sidecar PDF name for %s: %s", source_path.name, exc)
+
+    _clear_generated_previews(doc_id)
+    return final_pdf_path if final_pdf_path.is_file() else None
+
+
+def _viewer_pdf_source_path(
+    parsed: dict[str, Any],
+    *,
+    generate_if_missing: bool = False,
+) -> Path | None:
+    file_type = str(parsed.get("file_type") or "").lower()
+    filepath = str(parsed.get("filepath") or "").strip()
+
+    if file_type == "pdf":
+        pdf_path = Path(filepath) if filepath else None
+        return pdf_path if pdf_path and pdf_path.is_file() else None
+
+    doc_id = _parsed_doc_id(parsed)
+    if not doc_id:
+        return None
+
+    sidecar_path = _existing_sidecar_pdf(doc_id)
+    source_path = Path(filepath) if filepath else None
+    if sidecar_path is not None and sidecar_path.is_file():
+        if source_path is None or not source_path.is_file():
+            return sidecar_path
+        try:
+            if sidecar_path.stat().st_mtime >= source_path.stat().st_mtime:
+                return sidecar_path
+        except Exception:
+            return sidecar_path
+
+    if not generate_if_missing:
+        return None
+    return _maybe_create_sidecar_pdf(parsed)
+
+
+def _pdf_page_count(pdf_path: Path) -> int | None:
+    try:
+        import fitz  # PyMuPDF
+    except Exception as exc:
+        logger.warning("Could not import PyMuPDF for page count: %s", exc)
+        return None
+
+    try:
+        with fitz.open(str(pdf_path)) as document:
+            return int(document.page_count)
+    except Exception as exc:
+        logger.warning("Could not read PDF page count for %s: %s", pdf_path, exc)
+        return None
+
+
+def _ensure_pdf_preview(doc_id: str, page_num: int) -> Path | None:
+    preview_path = _preview_path(doc_id, page_num)
+    cached = _load_result(doc_id) or parsed_cache.get(doc_id)
+    if preview_path.is_file():
+        if not cached:
+            return preview_path
+        pdf_source = _viewer_pdf_source_path(cached, generate_if_missing=False)
+        if pdf_source is None or not pdf_source.is_file():
+            return preview_path
+        try:
+            if preview_path.stat().st_mtime >= pdf_source.stat().st_mtime:
+                return preview_path
+        except Exception:
+            return preview_path
+
+    if not cached:
+        return None
+
+    pdf_source = _viewer_pdf_source_path(
+        cached,
+        generate_if_missing=_viewer_sidecar_generation_allowed(str(cached.get("file_type") or "")),
+    )
+    if pdf_source is None or not pdf_source.is_file():
+        return None
+
+    try:
+        import fitz  # PyMuPDF
+    except Exception as exc:
+        logger.warning("Could not import PyMuPDF for preview fallback: %s", exc)
+        return None
+
+    try:
+        with fitz.open(str(pdf_source)) as document:
+            if page_num < 1 or page_num > document.page_count:
+                return None
+            page = document.load_page(page_num - 1)
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+            preview_path.parent.mkdir(parents=True, exist_ok=True)
+            pixmap.save(str(preview_path))
+            return preview_path
+    except Exception as exc:
+        logger.warning("Failed to generate preview for doc=%s page=%s: %s", doc_id, page_num, exc)
+        return None
+
+
+def _preview_content_bbox(image: Any) -> tuple[int, int, int, int] | None:
+    try:
+        from PIL import ImageOps
+
+        gray = ImageOps.grayscale(image.convert("RGB"))
+        mask = gray.point(lambda value: 255 if value < 245 else 0)
+        return mask.getbbox()
+    except Exception:
+        return None
+
+
+def _ensure_spreadsheet_stitched_preview(doc_id: str) -> Path | None:
+    cached = _load_result(doc_id) or parsed_cache.get(doc_id)
+    if not cached:
+        return None
+
+    file_type = str(cached.get("file_type") or "").lower()
+    if file_type not in {"xls", "xlsx"}:
+        return None
+
+    pdf_source = _viewer_pdf_source_path(cached, generate_if_missing=True)
+    if pdf_source is None or not pdf_source.is_file():
+        return None
+
+    page_count = _pdf_page_count(pdf_source) or len(cached.get("pages") or []) or 1
+    if page_count <= 1:
+        return _ensure_pdf_preview(doc_id, 1)
+
+    stitched_path = _stitched_preview_path(doc_id)
+    preview_paths: list[Path] = []
+    for page_num in range(1, page_count + 1):
+        preview_path = _ensure_pdf_preview(doc_id, page_num)
+        if preview_path is None or not preview_path.is_file():
+            return None
+        preview_paths.append(preview_path)
+
+    try:
+        newest_source_mtime = max(path.stat().st_mtime for path in preview_paths)
+        if stitched_path.is_file() and stitched_path.stat().st_mtime >= newest_source_mtime:
+            return stitched_path
+    except Exception:
+        pass
+
+    try:
+        from PIL import Image
+    except Exception as exc:
+        logger.warning("Could not import Pillow for stitched spreadsheet preview: %s", exc)
+        return None
+
+    try:
+        opened_images = [Image.open(path).convert("RGB") for path in preview_paths]
+        bboxes = [_preview_content_bbox(image) for image in opened_images]
+        valid_bboxes = [bbox for bbox in bboxes if bbox is not None]
+        if valid_bboxes:
+            top = min(bbox[1] for bbox in valid_bboxes)
+            bottom = max(bbox[3] for bbox in valid_bboxes)
+        else:
+            top = 0
+            bottom = max(image.height for image in opened_images)
+
+        cropped_images = []
+        for image, bbox in zip(opened_images, bboxes):
+            if bbox is None:
+                left, right = 0, image.width
+            else:
+                left, right = bbox[0], bbox[2]
+            crop_top = max(0, min(top, image.height))
+            crop_bottom = max(crop_top + 1, min(bottom, image.height))
+            crop_left = max(0, min(left, image.width - 1))
+            crop_right = max(crop_left + 1, min(right, image.width))
+            cropped_images.append(image.crop((crop_left, crop_top, crop_right, crop_bottom)))
+
+        total_width = sum(image.width for image in cropped_images)
+        max_height = max(image.height for image in cropped_images)
+        canvas = Image.new("RGB", (total_width, max_height), "white")
+        offset_x = 0
+        for image in cropped_images:
+            canvas.paste(image, (offset_x, 0))
+            offset_x += image.width
+
+        stitched_path.parent.mkdir(parents=True, exist_ok=True)
+        canvas.save(stitched_path, format="PNG")
+        return stitched_path
+    except Exception as exc:
+        logger.warning("Failed to build stitched spreadsheet preview for doc=%s: %s", doc_id, exc)
+        return None
+
+
+def _viewer_html(text: Any) -> str:
+    return html_escape("" if text is None else str(text), quote=True)
+
+
+def _viewer_multiline_html(text: Any) -> str:
+    lines = str(text or "").splitlines() or [""]
+    return "<br>".join(_viewer_html(line) for line in lines)
+
+
+def _viewer_trim_row(cells: list[str]) -> list[str]:
+    trimmed = list(cells)
+    while trimmed and not str(trimmed[-1] or "").strip():
+        trimmed.pop()
+    return trimmed
+
+
+def _viewer_table_rows_from_pipe_text(text: Any) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for raw_line in str(text or "").splitlines():
+        line = raw_line.strip()
+        if not line or "|" not in line:
+            continue
+        cells = _viewer_trim_row([cell.strip() for cell in line.split("|")])
+        if len(cells) >= 2:
+            rows.append(cells)
+    return rows
+
+
+def _viewer_render_table(rows: list[list[str]], *, first_row_header: bool = True) -> str:
+    normalized = [_viewer_trim_row([str(cell or "") for cell in row]) for row in rows]
+    normalized = [row for row in normalized if row]
+    if not normalized:
+        return ""
+
+    column_count = max(len(row) for row in normalized)
+    padded = [row + [""] * (column_count - len(row)) for row in normalized]
+    header_row = padded[0] if first_row_header else None
+    body_rows = padded[1:] if first_row_header and len(padded) > 1 else (padded if not first_row_header else [])
+
+    header_html = ""
+    if header_row is not None:
+        header_html = (
+            "<thead><tr>"
+            + "".join(f"<th>{_viewer_multiline_html(cell)}</th>" for cell in header_row)
+            + "</tr></thead>"
+        )
+
+    if not body_rows and header_row is not None:
+        body_rows = [header_row]
+        header_html = ""
+
+    body_html = (
+        "<tbody>"
+        + "".join(
+            "<tr>" + "".join(f"<td>{_viewer_multiline_html(cell)}</td>" for cell in row) + "</tr>"
+            for row in body_rows
+        )
+        + "</tbody>"
+    )
+
+    return f'<div class="viewer-table-wrap"><table class="viewer-html-table">{header_html}{body_html}</table></div>'
+
+
+def _viewer_render_docx_html(filepath: str) -> str:
+    from docx import Document
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    def iter_block_items(document: Any):
+        for child in document.element.body.iterchildren():
+            tag = str(child.tag)
+            if tag.endswith("}p"):
+                yield Paragraph(child, document)
+            elif tag.endswith("}tbl"):
+                yield Table(child, document)
+
+    doc = Document(filepath)
+    parts: list[str] = []
+    for block in iter_block_items(doc):
+        if isinstance(block, Paragraph):
+            text = block.text.strip()
+            if not text:
+                continue
+            style_name = (getattr(block.style, "name", "") or "").lower()
+            if style_name in {"title", "subtitle"}:
+                tag = "h2"
+            elif style_name.startswith("heading"):
+                tag = "h3"
+            else:
+                tag = "p"
+            parts.append(f"<{tag}>{_viewer_multiline_html(text)}</{tag}>")
+            continue
+
+        rows = []
+        for row in block.rows:
+            values = _viewer_trim_row([cell.text.strip() for cell in row.cells])
+            if values:
+                rows.append(values)
+        table_html = _viewer_render_table(rows)
+        if table_html:
+            parts.append(table_html)
+
+    if not parts:
+        parts.append('<div class="viewer-inline-empty">표시할 내용이 없습니다.</div>')
+    return "".join(parts)
+
+
+def _viewer_excel_string(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, float) and value == int(value):
+        return str(int(value))
+    return str(value)
+
+
+def _viewer_render_excel_html(filepath: str, file_type: str) -> str:
+    max_rows = 300
+    max_cols = 32
+    sections: list[str] = []
+    empty_html = '<div class="viewer-inline-empty">표시할 데이터가 없습니다.</div>'
+
+    if file_type == "xlsx":
+        import openpyxl
+
+        workbook = openpyxl.load_workbook(filepath, data_only=True, read_only=True)
+        try:
+            sheet_names = list(workbook.sheetnames)
+            for sheet_index, sheet_name in enumerate(sheet_names, start=1):
+                worksheet = workbook[sheet_name]
+                rows: list[list[str]] = []
+                truncated = False
+                for row_index, row in enumerate(worksheet.iter_rows(values_only=True), start=1):
+                    values = _viewer_trim_row([_viewer_excel_string(value).strip() for value in list(row)[:max_cols]])
+                    if values:
+                        rows.append(values)
+                    if row_index >= max_rows:
+                        truncated = True
+                        break
+                table_html = _viewer_render_table(rows)
+                note = (
+                    '<div class="viewer-inline-note">행 수가 많아 상위 300행까지만 표시합니다.</div>'
+                    if truncated
+                    else ""
+                )
+                sections.append(
+                    f'<section class="viewer-html-page">'
+                    f'<div class="viewer-page-meta">시트 {sheet_index} · {_viewer_html(sheet_name)}</div>'
+                    f'<div class="viewer-html-content">{table_html or empty_html}{note}</div>'
+                    f"</section>"
+                )
+        finally:
+            workbook.close()
+        return "".join(sections)
+
+    import xlrd
+
+    workbook = xlrd.open_workbook(filepath, on_demand=True)
+    try:
+        for sheet_index in range(workbook.nsheets):
+            worksheet = workbook.sheet_by_index(sheet_index)
+            rows = []
+            truncated = False
+            for row_index in range(min(worksheet.nrows, max_rows)):
+                values = _viewer_trim_row([
+                    _viewer_excel_string(worksheet.cell_value(row_index, col_index)).strip()
+                    for col_index in range(min(worksheet.ncols, max_cols))
+                ])
+                if values:
+                    rows.append(values)
+            if worksheet.nrows > max_rows:
+                truncated = True
+            table_html = _viewer_render_table(rows)
+            note = (
+                '<div class="viewer-inline-note">행 수가 많아 상위 300행까지만 표시합니다.</div>'
+                if truncated
+                else ""
+            )
+            sections.append(
+                f'<section class="viewer-html-page">'
+                f'<div class="viewer-page-meta">시트 {sheet_index + 1} · {_viewer_html(worksheet.name)}</div>'
+                f'<div class="viewer-html-content">{table_html or empty_html}{note}</div>'
+                f"</section>"
+            )
+    finally:
+        workbook.release_resources()
+
+    return "".join(sections)
+
+
+def _viewer_render_transformed_html(parsed: dict[str, Any]) -> str:
+    pages = parsed.get("pages") or []
+    sections: list[str] = []
+
+    for index, page in enumerate(pages, start=1):
+        page_num = int(page.get("page_num") or index)
+        page_label = page.get("sheet_name") or f"페이지 {page_num}"
+        blocks = page.get("blocks") or []
+        body_parts: list[str] = []
+
+        for block in blocks:
+            text = str(block.get("text") or "").strip()
+            if not text:
+                continue
+            block_type = str(block.get("type") or "").lower()
+            if block_type == "title":
+                body_parts.append(f'<h3 class="viewer-block-title">{_viewer_multiline_html(text)}</h3>')
+            elif block_type == "table":
+                rows = _viewer_table_rows_from_pipe_text(text)
+                table_html = _viewer_render_table(rows) if rows else ""
+                body_parts.append(table_html or f'<pre class="viewer-pre">{_viewer_html(text)}</pre>')
+            else:
+                body_parts.append(f"<p>{_viewer_multiline_html(text)}</p>")
+
+        if not body_parts:
+            fallback_text = str(page.get("text") or page.get("rag_text") or "").strip()
+            if fallback_text:
+                body_parts.append(f'<pre class="viewer-pre">{_viewer_html(fallback_text)}</pre>')
+            else:
+                body_parts.append('<div class="viewer-inline-empty">표시할 내용이 없습니다.</div>')
+
+        sections.append(
+            f'<section class="viewer-html-page">'
+            f'<div class="viewer-page-meta">{_viewer_html(page_label)}</div>'
+            f'<div class="viewer-html-content">{"".join(body_parts)}</div>'
+            f"</section>"
+        )
+
+    if not sections:
+        sections.append('<div class="viewer-inline-empty">표시할 내용이 없습니다.</div>')
+    return "".join(sections)
+
+
+def _viewer_payload_v2(parsed: dict[str, Any]) -> dict[str, Any]:
+    doc_id = str(parsed.get("id") or "")
+    file_type = str(parsed.get("file_type") or "").lower()
+    filename = str(parsed.get("filename") or "")
+    filepath = str(parsed.get("filepath") or "")
+    pages = parsed.get("pages") or []
+
+    if file_type == "pdf":
+        page_entries = []
+        for index, page in enumerate(pages, start=1):
+            page_num = int(page.get("page_num") or index)
+            page_entries.append(
+                {
+                    "page_num": page_num,
+                    "preview_url": f"/api/documents/{doc_id}/pages/{page_num}/preview",
+                }
+            )
+        return {
+            "mode": "pdf_previews",
+            "title": filename,
+            "subtitle": f"PDF 미리보기 · {len(page_entries)} pages",
+            "file_type": file_type,
+            "pages": page_entries,
+        }
+
+    html = ""
+    subtitle = "읽기용 변환 문서"
+    if file_type == "docx":
+        try:
+            html = _viewer_render_docx_html(filepath)
+            subtitle = "DOCX 라이브러리 렌더링"
+        except Exception as exc:
+            logger.warning("DOCX viewer fallback for %s: %s", filename, exc)
+            html = _viewer_render_transformed_html(parsed)
+            subtitle = "DOCX 변환 뷰"
+    elif file_type in {"xlsx", "xls"}:
+        try:
+            html = _viewer_render_excel_html(filepath, file_type)
+            subtitle = f"{file_type.upper()} 라이브러리 렌더링"
+        except Exception as exc:
+            logger.warning("Excel viewer fallback for %s: %s", filename, exc)
+            html = _viewer_render_transformed_html(parsed)
+            subtitle = f"{file_type.upper()} 변환 뷰"
+    elif file_type in {"doc", "hwp"}:
+        html = _viewer_render_transformed_html(parsed)
+        subtitle = f"{file_type.upper()} 변환 뷰"
+    else:
+        html = _viewer_render_transformed_html(parsed)
+
+    return {
+        "mode": "html_document",
+        "title": filename,
+        "subtitle": subtitle,
+        "file_type": file_type,
+        "html": html,
+    }
+
+
+def _viewer_payload(parsed: dict[str, Any]) -> dict[str, Any]:
+    doc_id = str(parsed.get("id") or "")
+    file_type = str(parsed.get("file_type") or "").lower()
+    filename = str(parsed.get("filename") or "")
+    filepath = str(parsed.get("filepath") or "")
+    pages = parsed.get("pages") or []
+
+    if file_type == "pdf":
+        page_entries = []
+        for index, page in enumerate(pages, start=1):
+            page_num = int(page.get("page_num") or index)
+            page_entries.append(
+                {
+                    "page_num": page_num,
+                    "preview_url": f"/api/documents/{doc_id}/pages/{page_num}/preview",
+                }
+            )
+        return {
+            "mode": "pdf_previews",
+            "title": filename,
+            "subtitle": f"PDF 미리보기 · {len(page_entries)} pages",
+            "file_type": file_type,
+            "pages": page_entries,
+        }
+
+    html = ""
+    subtitle = "변환 문서 뷰"
+    render_source = "converted"
+    if file_type == "docx":
+        try:
+            html = _viewer_render_docx_html(filepath)
+            subtitle = "DOCX 라이브러리 렌더"
+            render_source = "library"
+        except Exception as exc:
+            logger.warning("DOCX viewer fallback for %s: %s", filename, exc)
+            html = _viewer_render_transformed_html(parsed)
+            subtitle = "DOCX 변환 뷰 (fallback)"
+            render_source = "converted_fallback"
+    elif file_type in {"xlsx", "xls"}:
+        try:
+            html = _viewer_render_excel_html(filepath, file_type)
+            subtitle = f"{file_type.upper()} 라이브러리 렌더"
+            render_source = "library"
+        except Exception as exc:
+            logger.warning("Excel viewer fallback for %s: %s", filename, exc)
+            html = _viewer_render_transformed_html(parsed)
+            subtitle = f"{file_type.upper()} 변환 뷰 (fallback)"
+            render_source = "converted_fallback"
+    elif file_type in {"doc", "hwp"}:
+        html = _viewer_render_transformed_html(parsed)
+        subtitle = f"{file_type.upper()} 변환 뷰"
+        render_source = "converted"
+    else:
+        html = _viewer_render_transformed_html(parsed)
+
+    return {
+        "mode": "html_document",
+        "title": filename,
+        "subtitle": subtitle,
+        "file_type": file_type,
+        "render_source": render_source,
+        "html": html,
+    }
+
+
+def _viewer_payload_with_sidecar(parsed: dict[str, Any]) -> dict[str, Any]:
+    doc_id = _parsed_doc_id(parsed)
+    file_type = str(parsed.get("file_type") or "").lower()
+    filename = str(parsed.get("filename") or "")
+    filepath = str(parsed.get("filepath") or "")
+    pages = parsed.get("pages") or []
+
+    pdf_source = _viewer_pdf_source_path(
+        parsed,
+        generate_if_missing=_viewer_sidecar_generation_allowed(file_type),
+    )
+    if pdf_source is not None and pdf_source.is_file():
+        page_count = _pdf_page_count(pdf_source) or len(pages) or 1
+        page_entries = [
+            {
+                "page_num": page_num,
+                "preview_url": f"/api/documents/{doc_id}/pages/{page_num}/preview",
+            }
+            for page_num in range(1, page_count + 1)
+        ]
+        source_label = "PDF" if file_type == "pdf" else "PDF sidecar"
+        return {
+            "mode": "pdf_previews",
+            "title": filename,
+            "subtitle": f"{source_label} preview - {len(page_entries)} pages",
+            "file_type": file_type,
+            "pages": page_entries,
+            "stitched_preview_url": (
+                f"/api/documents/{doc_id}/preview-strip"
+                if file_type in {"xls", "xlsx"} and page_count > 1
+                else ""
+            ),
+        }
+
+    html = ""
+    subtitle = "Converted document view"
+    render_source = "converted"
+    if file_type == "docx":
+        try:
+            html = _viewer_render_docx_html(filepath)
+            subtitle = "DOCX library render"
+            render_source = "library"
+        except Exception as exc:
+            logger.warning("DOCX viewer fallback for %s: %s", filename, exc)
+            html = _viewer_render_transformed_html(parsed)
+            subtitle = "DOCX converted view (fallback)"
+            render_source = "converted_fallback"
+    elif file_type in {"xlsx", "xls"}:
+        try:
+            html = _viewer_render_excel_html(filepath, file_type)
+            subtitle = f"{file_type.upper()} library render"
+            render_source = "library"
+        except Exception as exc:
+            logger.warning("Excel viewer fallback for %s: %s", filename, exc)
+            html = _viewer_render_transformed_html(parsed)
+            subtitle = f"{file_type.upper()} converted view (fallback)"
+            render_source = "converted_fallback"
+    elif file_type in {"doc", "hwp"}:
+        html = _viewer_render_transformed_html(parsed)
+        subtitle = f"{file_type.upper()} converted view"
+        render_source = "converted"
+    else:
+        html = _viewer_render_transformed_html(parsed)
+
+    return {
+        "mode": "html_document",
+        "title": filename,
+        "subtitle": subtitle,
+        "file_type": file_type,
+        "render_source": render_source,
+        "html": html,
+    }
 
 
 def _save_result(doc_id: str, data: dict[str, Any]) -> None:
@@ -111,15 +1098,23 @@ def _is_legacy_result(data: dict[str, Any]) -> bool:
     """Check if the cached JSON is from the older version of the parser."""
     if data.get("parser_version") != PARSER_VERSION:
         return True
-        
+
     pages = data.get("pages", [])
     if not pages:
-        return False  # Empty documents might not be legacy if they just failed, but let's re-parse to be safe or keep it. Actually, if there are no pages, it lacks new fields.
-        # A safer check is to see if any new field exists in the first page (if there are pages).
-    
+        return False
+
     first_page = pages[0]
-    required_fields = ("blocks", "preview_image", "parser_debug", "page_width")
-    # It must have all required fields to be considered non-legacy
+    file_type = str(data.get("file_type") or "").lower()
+
+    if file_type == "pdf":
+        required_fields = ("blocks", "preview_image", "parser_debug", "page_width")
+    elif file_type in {"doc", "docx", "hwp"}:
+        required_fields = ("blocks", "tables", "text")
+    elif file_type in {"xlsx", "xls"}:
+        required_fields = ("sheet_name", "text", "tables", "row_count", "col_count")
+    else:
+        required_fields = ("text",)
+
     return not all(field in first_page for field in required_fields)
 
 
@@ -264,6 +1259,71 @@ def _rag_api_post(endpoint: str, payload: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _rag_api_stream(
+    endpoint: str,
+    payload: dict[str, Any],
+    cache_key: tuple[Any, ...] | None = None,
+):
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    http_request = request.Request(
+        f"{RAG_API_BASE_URL}{endpoint}",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+            "Cache-Control": "no-cache",
+        },
+        method="POST",
+    )
+
+    def _stream():
+        try:
+            with request.urlopen(http_request, timeout=180) as response:
+                current_event = "message"
+                data_lines: list[str] = []
+                for raw_line in response:
+                    yield raw_line
+                    line = raw_line.decode("utf-8", errors="replace")
+                    if line.startswith("event:"):
+                        current_event = line.split(":", 1)[1].strip() or "message"
+                    elif line.startswith("data:"):
+                        data_lines.append(line.split(":", 1)[1].lstrip())
+                    elif not line.strip():
+                        if current_event == "done" and cache_key and endpoint == "/qa/stream" and data_lines:
+                            payload_text = "".join(data_lines).strip()
+                            try:
+                                cached_payload = json.loads(payload_text)
+                            except json.JSONDecodeError:
+                                cached_payload = None
+                            if isinstance(cached_payload, dict):
+                                with rag_response_cache_lock:
+                                    qa_response_cache[cache_key] = cached_payload
+                        current_event = "message"
+                        data_lines = []
+        except error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            yield _sse_message("error", {"detail": detail or f"Upstream returned HTTP {exc.code}."})
+        except error.URLError as exc:
+            yield _sse_message("error", {"detail": f"RAG API is not reachable at {RAG_API_BASE_URL}: {exc.reason}"})
+        except Exception as exc:
+            yield _sse_message("error", {"detail": f"RAG API proxy failed: {exc}"})
+
+    return _stream()
+
+
+def _sse_message(event: str, payload: dict[str, Any]) -> bytes:
+    body = json.dumps(payload, ensure_ascii=False)
+    return f"event: {event}\ndata: {body}\n\n".encode("utf-8")
+
+
+def _stream_cached_qa_response(payload: dict[str, Any]):
+    def _stream():
+        yield _sse_message("retrieved", {"count": len(payload.get("sources") or []), "message": "Loaded cached QA response."})
+        yield _sse_message("done", payload)
+
+    return _stream()
+
+
 def _is_document_title_query(query: str) -> bool:
     normalized = "".join(str(query or "").lower().split())
     title_terms = ("문서제목", "문서명", "파일명", "제목이뭐", "제목뭐", "documenttitle", "filename")
@@ -281,30 +1341,32 @@ def _document_title_response(query: str, filename: str) -> dict[str, Any]:
 
 def _load_rag_documents() -> list[dict[str, Any]]:
     latest_path = PROJECT_ROOT / "chroma_indexes" / "latest.json"
+    id_manifest: list[dict[str, Any]] = []
     try:
         latest = _read_json_file(latest_path)
     except HTTPException as exc:
         logger.warning("Could not load RAG latest index %s: %s", latest_path, exc.detail)
-        return []
+        latest = None
 
-    id_manifest_path = _resolve_project_path(
-        latest.get("id_manifest_path"),
-        artifact_root_name="chroma_indexes",
-        run_id=latest.get("run_id"),
-        fallback_filename="id_manifest.json",
-    )
-    try:
-        with id_manifest_path.open("r", encoding="utf-8") as handle:
-            id_manifest = json.load(handle)
-    except FileNotFoundError as exc:
-        logger.warning("Could not find RAG id manifest: %s", id_manifest_path)
-        return []
-    except Exception as exc:
-        logger.warning("Could not read RAG id manifest %s: %s", id_manifest_path, exc)
-        return []
-    if not isinstance(id_manifest, list):
-        logger.warning("Expected JSON array in RAG id manifest: %s", id_manifest_path)
-        return []
+    if latest is not None:
+        id_manifest_path = _resolve_project_path(
+            latest.get("id_manifest_path"),
+            artifact_root_name="chroma_indexes",
+            run_id=latest.get("run_id"),
+            fallback_filename="id_manifest.json",
+        )
+        try:
+            with id_manifest_path.open("r", encoding="utf-8") as handle:
+                loaded_manifest = json.load(handle)
+        except FileNotFoundError:
+            logger.warning("Could not find RAG id manifest: %s", id_manifest_path)
+        except Exception as exc:
+            logger.warning("Could not read RAG id manifest %s: %s", id_manifest_path, exc)
+        else:
+            if isinstance(loaded_manifest, list):
+                id_manifest = loaded_manifest
+            else:
+                logger.warning("Expected JSON array in RAG id manifest: %s", id_manifest_path)
 
     grouped: dict[str, dict[str, Any]] = {}
     page_counts: dict[str, set[int]] = {}
@@ -337,8 +1399,70 @@ def _load_rag_documents() -> list[dict[str, Any]]:
     for filename, doc in grouped.items():
         pages = {page for page in page_counts.get(filename, set()) if page > 0}
         strategies = sorted(strategy_counts.get(filename, Counter()).keys())
-        docs.append({**doc, "page_count": len(pages), "strategies": strategies})
-    return sorted(docs, key=lambda item: item["filename"])
+        docs.append(
+            {
+                **doc,
+                "page_count": len(pages),
+                "strategies": strategies,
+                "status": "ready",
+                "stage": "done",
+                "progress": 100,
+                "message": "사용 가능",
+                "is_pending": False,
+                "is_available": True,
+            }
+        )
+
+    docs_by_filename = {str(doc.get("filename") or ""): doc for doc in docs}
+    with upload_jobs_lock:
+        pending_upload_jobs = [
+            dict(job)
+            for job in upload_jobs.values()
+            if str(job.get("kind") or "") == "upload"
+            and str(job.get("status") or "") in {"queued", "running"}
+        ]
+
+    for job in pending_upload_jobs:
+        filename = str(job.get("filename") or "").strip()
+        if not filename:
+            continue
+
+        doc_id = str(job.get("doc_id") or "")
+        parsed = None
+        if doc_id:
+            parsed = parsed_cache.get(doc_id)
+            if parsed is None:
+                parsed = _load_result(doc_id)
+                if parsed is not None:
+                    parsed_cache[doc_id] = parsed
+
+        base = dict(docs_by_filename.get(filename) or {})
+        page_count = len(parsed.get("pages") or []) if parsed else int(base.get("page_count") or 0)
+        file_type = str((parsed or {}).get("file_type") or Path(filename).suffix.lstrip(".").lower())
+        base.update(
+            {
+                "filename": filename,
+                "doc_id": doc_id or str(base.get("doc_id") or ""),
+                "file_type": file_type,
+                "chunk_count": int(base.get("chunk_count") or 0),
+                "page_count": page_count,
+                "strategies": list(base.get("strategies") or []),
+                "status": str(job.get("status") or "queued"),
+                "stage": str(job.get("stage") or "queued"),
+                "progress": int(job.get("progress") or 0),
+                "message": str(job.get("message") or "업로드 중..."),
+                "is_pending": True,
+                "is_available": False,
+                "created_at": str(job.get("created_at") or ""),
+                "updated_at": str(job.get("updated_at") or ""),
+            }
+        )
+        docs_by_filename[filename] = base
+
+    return sorted(
+        docs_by_filename.values(),
+        key=lambda item: (not bool(item.get("is_pending")), str(item.get("filename") or "").casefold()),
+    )
 
 
 def _job_snapshot(job_id: str) -> dict[str, Any]:
@@ -617,6 +1741,7 @@ def _process_upload_job(job_id: str, file_path: Path) -> None:
             except Exception as exc:
                 logger.warning("write_root_llm_exports failed for upload job %s: %s", job_id, exc)
             parsed_cache[doc_id] = result
+            _maybe_create_sidecar_pdf(result)
 
             _run_pipeline_command(
                 job_id,
@@ -649,6 +1774,7 @@ def _process_upload_job(job_id: str, file_path: Path) -> None:
             doc_id=doc_id,
             filename=file_path.name,
         )
+        _invalidate_rag_response_cache(filename=file_path.name)
     except Exception as exc:
         logger.exception("Upload job %s failed", job_id)
         _set_upload_job(
@@ -813,6 +1939,7 @@ def _process_delete_job(job_id: str, filename: str, doc_id: str) -> None:
             doc_id=doc_id,
             filename=filename,
         )
+        _invalidate_rag_response_cache(filename=filename)
     except Exception as exc:
         logger.exception("Delete job %s failed", job_id)
         if vector_latest_backup is not None:
@@ -864,6 +1991,7 @@ async def list_rag_documents():
 async def upload_rag_document(file: UploadFile = File(...)):
     filename = _safe_upload_name(file.filename or "")
     destination = _unique_upload_path(filename)
+    doc_id = _doc_id(str(destination))
     try:
         with destination.open("wb") as handle:
             shutil.copyfileobj(file.file, handle)
@@ -882,7 +2010,7 @@ async def upload_rag_document(file: UploadFile = File(...)):
             "message": "업로드 완료. 인덱싱 대기 중...",
             "progress": 5,
             "filename": destination.name,
-            "doc_id": None,
+            "doc_id": doc_id,
             "error": None,
             "created_at": datetime.now().isoformat(timespec="seconds"),
             "updated_at": datetime.now().isoformat(timespec="seconds"),
@@ -943,7 +2071,50 @@ async def rag_qa(proxy_request: Request):
     filename_filter = str(payload.get("filename_filter") or "").strip()
     if filename_filter and _is_document_title_query(query):
         return _document_title_response(query, filename_filter)
-    return _rag_api_post("/qa", payload)
+    cache_key = _qa_cache_key(payload)
+    with rag_response_cache_lock:
+        cached = qa_response_cache.get(cache_key)
+    if cached is not None:
+        return {**cached, "cache_hit": True}
+
+    response = _rag_api_post("/qa", payload)
+    with rag_response_cache_lock:
+        qa_response_cache[cache_key] = response
+    return {**response, "cache_hit": False}
+
+
+@app.post("/api/rag/qa/stream")
+async def rag_qa_stream(proxy_request: Request):
+    payload = await proxy_request.json()
+    if not isinstance(payload, dict):
+        raise HTTPException(400, "Expected JSON object")
+    query = str(payload.get("query") or "").strip()
+    filename_filter = str(payload.get("filename_filter") or "").strip()
+    if filename_filter and _is_document_title_query(query):
+        response = _document_title_response(query, filename_filter)
+        with rag_response_cache_lock:
+            qa_response_cache[_qa_cache_key(payload)] = response
+        return StreamingResponse(
+            _stream_cached_qa_response(response),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        )
+
+    cache_key = _qa_cache_key(payload)
+    with rag_response_cache_lock:
+        cached = qa_response_cache.get(cache_key)
+    if cached is not None:
+        return StreamingResponse(
+            _stream_cached_qa_response(cached),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        )
+
+    return StreamingResponse(
+        _rag_api_stream("/qa/stream", payload, cache_key=cache_key),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/rag/summary")
@@ -951,7 +2122,16 @@ async def rag_summary(proxy_request: Request):
     payload = await proxy_request.json()
     if not isinstance(payload, dict):
         raise HTTPException(400, "Expected JSON object")
-    return _rag_api_post("/summary", payload)
+    cache_key = _summary_cache_key(payload)
+    with rag_response_cache_lock:
+        cached = summary_response_cache.get(cache_key)
+    if cached is not None:
+        return {**cached, "cache_hit": True}
+
+    response = _rag_api_post("/summary", payload)
+    with rag_response_cache_lock:
+        summary_response_cache[cache_key] = response
+    return {**response, "cache_hit": False}
 
 
 @app.post("/api/documents/{doc_id}/parse")
@@ -975,6 +2155,7 @@ async def parse_single(doc_id: str):
             except Exception as exc:
                 logger.warning("write_root_llm_exports failed: %s", exc)
             parsed_cache[doc_id] = result
+            _maybe_create_sidecar_pdf(result)
             return result
     raise HTTPException(404, "Document not found")
 
@@ -989,6 +2170,18 @@ async def get_parsed(doc_id: str):
     if cached is None:
         raise HTTPException(404, "Document not parsed yet")
     return cached
+
+
+@app.get("/api/documents/{doc_id}/viewer")
+async def get_document_viewer(doc_id: str):
+    cached = parsed_cache.get(doc_id)
+    if cached is None:
+        cached = _load_result(doc_id)
+        if cached:
+            parsed_cache[doc_id] = cached
+    if cached is None:
+        raise HTTPException(404, "Document not parsed yet")
+    return _viewer_payload_with_sidecar(cached)
 
 
 @app.post("/api/parse-all")
@@ -1020,6 +2213,8 @@ async def parse_all():
             }
         parsed_cache[did] = result
         _save_result(did, result)
+        if result.get("status") != "error":
+            _maybe_create_sidecar_pdf(result)
         results.append(result)
     return results
 
@@ -1061,11 +2256,18 @@ async def quality_report():
 @app.get("/api/documents/{doc_id}/pages/{page_num}/preview")
 async def get_page_preview(doc_id: str, page_num: int):
     """Serve a rendered page preview image (PNG)."""
-    preview_path = os.path.join(
-        RESULT_DIR, "previews", doc_id, f"page_{page_num}.png"
-    )
-    if not os.path.isfile(preview_path):
+    preview_path = _ensure_pdf_preview(doc_id, page_num) or _preview_path(doc_id, page_num)
+    if not preview_path.is_file():
         raise HTTPException(404, "Preview image not found. Parse the document first.")
+    return FileResponse(preview_path, media_type="image/png")
+
+
+@app.get("/api/documents/{doc_id}/preview-strip")
+async def get_spreadsheet_preview_strip(doc_id: str):
+    """Serve a stitched spreadsheet preview image (PNG)."""
+    preview_path = _ensure_spreadsheet_stitched_preview(doc_id)
+    if preview_path is None or not preview_path.is_file():
+        raise HTTPException(404, "Stitched preview image not found. Open the document again after parsing.")
     return FileResponse(preview_path, media_type="image/png")
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .schema import empty_chunk
@@ -26,6 +27,10 @@ from .visual_structured import build_visual_structured_records
 
 MAIN_STRATEGY = "text_first_with_visual_support"
 BASELINE_STRATEGY = "llm_ready_native"
+SENTENCE_END_RE = re.compile(r"[.!?]\s|[.!?]$|[다요음]\s|[다요음]$")
+PHONEISH_RE = re.compile(r"(?:\+?\d[\d\s().-]{6,}\d)")
+EMAILISH_RE = re.compile(r"\b[^@\s]+@[^@\s]+\.[^@\s]+\b")
+URLISH_RE = re.compile(r"\b(?:https?://|www\.)\S+\b", re.IGNORECASE)
 
 
 def _doc_fields(doc: dict[str, Any], doc_id: str) -> dict[str, Any]:
@@ -115,13 +120,20 @@ def _make_chunk(
 def _visual_support_for_group(text_blocks: list[dict[str, Any]], support_blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ids = {block_id(block) for block in text_blocks}
     panels = {panel_key(block) for block in text_blocks if panel_key(block)}
+    anchor_text = compact_join(block.get("text", "") for block in text_blocks)
     selected: list[dict[str, Any]] = []
     for block in support_blocks:
         meta = block_meta(block)
         context_ids = {str(x) for x in (meta.get("context_block_ids") or [])}
         same_panel = panel_key(block) and panel_key(block) in panels
         references_group = bool(context_ids & ids)
-        if same_panel or references_group:
+        if not (same_panel or references_group):
+            continue
+        support_score = _support_block_score(block)
+        required_score = 4 if references_group else 6
+        if len(anchor_text) < 120:
+            required_score += 1
+        if support_score >= required_score:
             selected.append(block)
     return selected
 
@@ -146,6 +158,130 @@ def _fallback_text_from_blocks(blocks: list[dict[str, Any]]) -> str:
         for support in support_text_from_block(block):
             parts.append(support)
     return compact_join(parts)
+
+
+def _sentence_like_count(text: str) -> int:
+    clean = clean_text(text)
+    if not clean:
+        return 0
+    lines = [line for line in clean.splitlines() if clean_text(line)]
+    count = len(SENTENCE_END_RE.findall(clean))
+    if count:
+        return count
+    return sum(1 for line in lines if len(line) >= 45)
+
+
+def _metric_like_count(text: str) -> int:
+    return len(re.findall(r"\d[\d,]*(?:\.\d+)?(?:\s*[%]|[A-Za-z]{1,4})?", text or ""))
+
+
+def _looks_contactish(text: str) -> bool:
+    clean = clean_text(text)
+    if len(clean) > 220:
+        return False
+    colon_lines = sum(1 for line in clean.splitlines() if ":" in line or "|" in line)
+    contact_signals = len(PHONEISH_RE.findall(clean)) + len(EMAILISH_RE.findall(clean)) + len(URLISH_RE.findall(clean))
+    return contact_signals >= 1 and colon_lines >= 1 and _sentence_like_count(clean) == 0 and _metric_like_count(clean) <= 2
+
+
+def _support_parts_for_block(block: dict[str, Any]) -> list[str]:
+    meta = block_meta(block)
+    parts: list[str] = []
+    candidate_keys = (
+        "table_summary",
+        "chart_summary",
+        "visual_summary",
+        "caption_text",
+        "table_markdown",
+    )
+    for key in candidate_keys:
+        value = clean_text(meta.get(key) or block.get(key))
+        if not value:
+            continue
+        if key == "table_markdown" and len(value) < 90:
+            continue
+        parts.append(value)
+    rows = meta.get("key_value_rows") or block.get("key_value_rows")
+    if isinstance(rows, list) and len(rows) >= 3:
+        rendered_rows: list[str] = []
+        for row in rows[:8]:
+            if isinstance(row, dict):
+                item = clean_text(row.get("item"))
+                values = clean_text(row.get("values"))
+                if item or values:
+                    rendered_rows.append(f"{item}: {values}".strip(": "))
+            elif isinstance(row, (list, tuple)):
+                row_text = " | ".join(clean_text(x) for x in row if clean_text(x))
+                if row_text:
+                    rendered_rows.append(row_text)
+        if rendered_rows:
+            parts.append("\n".join(rendered_rows))
+    return parts
+
+
+def _support_block_score(block: dict[str, Any]) -> int:
+    meta = block_meta(block)
+    text = compact_join(_support_parts_for_block(block))
+    if not text:
+        return 0
+    score = 0
+    text_len = len(text)
+    sentences = _sentence_like_count(text)
+    metrics = _metric_like_count(text)
+    rows = meta.get("key_value_rows") or block.get("key_value_rows") or []
+    if text_len >= 120:
+        score += 2
+    elif text_len >= 70:
+        score += 1
+    if sentences >= 2:
+        score += 2
+    elif sentences == 1:
+        score += 1
+    if metrics >= 4:
+        score += 2
+    elif metrics >= 2:
+        score += 1
+    if block.get("type") == "table":
+        if isinstance(rows, list) and len(rows) >= 4:
+            score += 2
+        elif isinstance(rows, list) and len(rows) >= 2:
+            score += 1
+        markdown = clean_text(meta.get("table_markdown"))
+        if markdown.count("\n") >= 3 or markdown.count("|") >= 8:
+            score += 1
+    else:
+        if clean_text(meta.get("chart_summary") or meta.get("visual_summary") or meta.get("caption_text")):
+            score += 1
+    if _looks_contactish(text):
+        score -= 4
+    if text_len < 45:
+        score -= 2
+    return score
+
+
+def _compose_group_text(text: str, support: list[dict[str, Any]]) -> tuple[str, str]:
+    anchor = clean_text(text)
+    support_candidates = sorted(
+        ((block, _support_block_score(block), compact_join(_support_parts_for_block(block))) for block in support),
+        key=lambda item: (item[1], len(item[2])),
+        reverse=True,
+    )
+    support_texts: list[str] = []
+    for _, score, candidate_text in support_candidates[:2]:
+        if not candidate_text:
+            continue
+        threshold = 5 if len(anchor) < 120 else 4
+        if score < threshold:
+            continue
+        support_texts.append(candidate_text)
+    display = anchor
+    if support_texts:
+        display = compact_join([anchor, *support_texts]) if anchor else compact_join(support_texts)
+    retrieval_support = support_texts
+    if len(anchor) < 60:
+        retrieval_support = support_texts[:1]
+    retrieval = compact_join([anchor, *retrieval_support]) if anchor else compact_join(retrieval_support)
+    return retrieval, display
 
 
 def _ordered_text_anchor_groups(text_blocks: list[dict[str, Any]], *, target_chars: int = 950) -> list[tuple[str, list[dict[str, Any]]]]:
@@ -203,11 +339,9 @@ def build_text_first_chunks(doc: dict[str, Any], llm_ready: dict[str, Any] | Non
             if len(text) < 24 and len(group) == 1 and not _visual_support_for_group(group, support_blocks):
                 continue
             support = _visual_support_for_group(group, support_blocks)
-            support_text = compact_join(part for block in support for part in support_text_from_block(block))
-            retrieval = compact_join([text, support_text])
+            retrieval, display = _compose_group_text(text, support)
             if not retrieval:
                 continue
-            display = compact_join([text, support_text])
             parts = split_long_text(retrieval)
             for part_no, part in enumerate(parts):
                 chunk_index += 1
@@ -234,9 +368,11 @@ def build_text_first_chunks(doc: dict[str, Any], llm_ready: dict[str, Any] | Non
             if not fallback:
                 fallback = _fallback_text_from_blocks(blocks)
             if fallback:
-                support = support_blocks if sparse else []
-                support_text = compact_join(part for block in support for part in support_text_from_block(block))
-                retrieval = compact_join([fallback, support_text])
+                support = [block for block in support_blocks if _support_block_score(block) >= 5] if sparse else []
+                retrieval, display = _compose_group_text(fallback, support)
+                if not retrieval:
+                    retrieval = fallback
+                    display = fallback
                 for part_no, part in enumerate(split_long_text(retrieval)):
                     chunk_index += 1
                     chunks.append(_make_chunk(
@@ -246,7 +382,7 @@ def build_text_first_chunks(doc: dict[str, Any], llm_ready: dict[str, Any] | Non
                         chunk_index=chunk_index,
                         chunk_type="page" if not sparse else "block_group",
                         retrieval_text=part,
-                        display_text=retrieval if part_no == 0 else part,
+                        display_text=display if part_no == 0 else part,
                         source_block_ids=[block_id(b) for b in blocks],
                         block_group=text_blocks,
                         support_blocks=support,
@@ -256,8 +392,11 @@ def build_text_first_chunks(doc: dict[str, Any], llm_ready: dict[str, Any] | Non
 
         if not emitted and support_blocks:
             for support in support_blocks:
-                retrieval = compact_join(support_text_from_block(support))
-                if not retrieval:
+                retrieval = compact_join(_support_parts_for_block(support))
+                support_score = _support_block_score(support)
+                if not retrieval or support_score < 7:
+                    continue
+                if len(retrieval) < 120 and _metric_like_count(retrieval) < 4 and _sentence_like_count(retrieval) < 2:
                     continue
                 chunk_index += 1
                 chunks.append(_make_chunk(
