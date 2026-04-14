@@ -117,6 +117,35 @@ def _make_chunk(
     )
 
 
+def _visual_structured_chunk_fields(structured: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(structured, dict):
+        return {}
+    fields: dict[str, Any] = {}
+    text_fields = {
+        "table_kind": structured.get("table_kind"),
+        "table_title": structured.get("title"),
+        "row_label": structured.get("row_label"),
+        "column_label": structured.get("column_label"),
+        "cell_value": structured.get("value"),
+    }
+    for key, value in text_fields.items():
+        clean = clean_text(value)
+        if clean:
+            fields[key] = clean
+
+    int_fields = {
+        "row_index_in_table": structured.get("row_index"),
+        "column_index_in_table": structured.get("column_index"),
+    }
+    for key, value in int_fields.items():
+        try:
+            if value is not None and value != "":
+                fields[key] = int(value)
+        except (TypeError, ValueError):
+            continue
+    return fields
+
+
 def _visual_support_for_group(text_blocks: list[dict[str, Any]], support_blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ids = {block_id(block) for block in text_blocks}
     panels = {panel_key(block) for block in text_blocks if panel_key(block)}
@@ -419,6 +448,10 @@ def build_text_first_chunks(doc: dict[str, Any], llm_ready: dict[str, Any] | Non
             if not retrieval:
                 continue
             visual_blocks = [b for b in (visual.get("blocks") or []) if isinstance(b, dict)]
+            visual_structured = {}
+            visual_metadata = visual.get("metadata") if isinstance(visual.get("metadata"), dict) else {}
+            if isinstance(visual_metadata.get("visual_structured"), dict):
+                visual_structured = visual_metadata["visual_structured"]
             for part_no, part in enumerate(split_long_text(retrieval, target=1100, hard=1450, overlap=120)):
                 chunk_index += 1
                 chunk = _make_chunk(
@@ -446,6 +479,7 @@ def build_text_first_chunks(doc: dict[str, Any], llm_ready: dict[str, Any] | Non
                     "source_bbox": str(visual.get("source_bbox") or ""),
                     "extraction_method": str(visual.get("extraction_method") or ""),
                 })
+                chunk.update(_visual_structured_chunk_fields(visual_structured))
                 if chunk["visual_type"] == "table":
                     chunk["has_table"] = True
                     chunk["table_count"] = max(1, int(chunk.get("table_count") or 0))

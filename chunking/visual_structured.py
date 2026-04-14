@@ -25,6 +25,17 @@ PHONEISH_RE = re.compile(r"(?:\+?\d[\d\s().-]{6,}\d)")
 EMAILISH_RE = re.compile(r"\b[^@\s]+@[^@\s]+\.[^@\s]+\b")
 URLISH_RE = re.compile(r"\b(?:https?://|www\.)\S+\b", re.IGNORECASE)
 
+FINANCIAL_TABLE_HINT_RE = re.compile(
+    r"(손익계산서|재무상태표|현금흐름표|포괄손익|주요지표|투자지표|실적|매출|매출액|매출총이익|"
+    r"영업이익|순이익|세전이익|자산|부채|자본|유동자산|유동부채|현금및현금성자산|"
+    r"roe|eps|bps|per|pbr|opm|npm|ebitda|revenue|sales|gross profit|operating profit|"
+    r"net income|assets|liabilities|equity|cash flow)",
+    re.IGNORECASE,
+)
+
+MAX_STRUCTURED_TABLE_ROW_RECORDS = 24
+MAX_STRUCTURED_TABLE_CELL_RECORDS = 72
+
 
 def build_visual_structured_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
@@ -58,6 +69,7 @@ def _table_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
             "page_num": page_num(page),
             "table_index": index,
             "title": _visual_title(page, block),
+            "table_kind": str(table.get("table_kind") or ""),
             "bbox": block.get("bbox") or [],
             "shape": table.get("shape") or meta.get("table_shape"),
             "headers": table.get("headers") or [],
@@ -71,6 +83,7 @@ def _table_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
             f"title: {structured['title']}",
             f"table_index: {index}",
             f"confidence: {structured['confidence']}",
+            f"table_kind: {structured['table_kind']}",
             f"shape: {_json_text(structured.get('shape'))}",
             "[TABLE SUMMARY]",
             summary,
@@ -89,6 +102,18 @@ def _table_records(page: dict[str, Any], blocks: list[dict[str, Any]]) -> list[d
             source_bbox=block.get("bbox") or [],
             extraction_method=str(structured["extraction_method"]),
         ))
+        if _should_emit_structured_table_records(table=table, summary=summary, title=structured["title"]):
+            records.extend(
+                _structured_table_records(
+                    page=page,
+                    block=block,
+                    table=table,
+                    table_index=index,
+                    base_confidence=structured["confidence"],
+                    title=structured["title"],
+                    extraction_method=str(structured["extraction_method"]),
+                )
+            )
     return records
 
 
@@ -305,6 +330,191 @@ def _row_signal(rows: list[Any]) -> int:
             elif len(cells) == 2:
                 signal += 1
     return signal
+
+
+def _should_emit_structured_table_records(*, table: dict[str, Any], summary: str, title: str) -> bool:
+    semantic_rows = _semantic_table_rows(table)
+    if len(semantic_rows) < 2:
+        return False
+    return bool(table.get("row_cell_retrieval_candidate") or table.get("financial_table_candidate"))
+
+
+def _structured_table_records(
+    *,
+    page: dict[str, Any],
+    block: dict[str, Any],
+    table: dict[str, Any],
+    table_index: int,
+    base_confidence: float,
+    title: str,
+    extraction_method: str,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    source_ids = [block_id(block)]
+    semantic_rows = _semantic_table_rows(table)[:MAX_STRUCTURED_TABLE_ROW_RECORDS]
+    cell_count = 0
+    table_kind = clean_text(table.get("table_kind"))
+
+    for row in semantic_rows:
+        row_label = clean_text(row.get("row_label")) or f"row_{int(row.get('row_index') or 0) + 1}"
+        pairs = [
+            pair for pair in (row.get("pairs") or [])
+            if clean_text(pair.get("column_label")) and clean_text(pair.get("value"))
+        ]
+        if not pairs:
+            continue
+
+        pair_preview = [_financial_pair_text(pair) for pair in pairs[:10]]
+        row_text = compact_join([
+            "[VISUAL STRUCTURED TABLE ROW]",
+            f"document_page: {page_num(page)}",
+            f"title: {title}",
+            f"table_index: {table_index}",
+            f"table_kind: {table_kind}",
+            f"row_index: {row.get('row_index')}",
+            f"row_label: {row_label}",
+            "[ROW VALUES]",
+            " | ".join(pair_preview),
+        ])
+        row_structured = {
+            "type": "table_row",
+            "page_num": page_num(page),
+            "table_index": table_index,
+            "title": title,
+            "table_kind": table_kind,
+            "row_index": row.get("row_index"),
+            "row_label": row_label,
+            "pairs_preview": pairs[:10],
+            "confidence": round(max(0.0, base_confidence - 0.03), 4),
+        }
+        records.append(_record(
+            chunk_type="table_row",
+            visual_type="table",
+            visual_index=table_index,
+            confidence=row_structured["confidence"],
+            source_block_ids=source_ids,
+            blocks=[block],
+            retrieval_text=row_text,
+            structured=row_structured,
+            source_bbox=block.get("bbox") or [],
+            extraction_method=extraction_method,
+        ))
+
+        for pair in pairs:
+            if cell_count >= MAX_STRUCTURED_TABLE_CELL_RECORDS:
+                break
+            column_label = clean_text(pair.get("column_label"))
+            value = clean_text(pair.get("value"))
+            if not column_label or not value:
+                continue
+            if not (_looks_numeric_like(value) or table_kind in {"returns_table", "period_matrix_table"}):
+                continue
+            cell_text = compact_join([
+                "[VISUAL STRUCTURED TABLE CELL]",
+                f"document_page: {page_num(page)}",
+                f"title: {title}",
+                f"table_index: {table_index}",
+                f"table_kind: {table_kind}",
+                f"row_index: {row.get('row_index')}",
+                f"row_label: {row_label}",
+                f"column_label: {column_label}",
+                f"value: {value}",
+                "[CELL CONTEXT]",
+                f"{row_label} | {column_label} | {value}",
+            ])
+            cell_structured = {
+                "type": "table_cell",
+                "page_num": page_num(page),
+                "table_index": table_index,
+                "title": title,
+                "table_kind": table_kind,
+                "row_index": row.get("row_index"),
+                "row_label": row_label,
+                "column_index": pair.get("column_index"),
+                "column_label": column_label,
+                "value": value,
+                "confidence": round(max(0.0, base_confidence - 0.06), 4),
+            }
+            records.append(_record(
+                chunk_type="table_cell",
+                visual_type="table",
+                visual_index=table_index,
+                confidence=cell_structured["confidence"],
+                source_block_ids=source_ids,
+                blocks=[block],
+                retrieval_text=cell_text,
+                structured=cell_structured,
+                source_bbox=block.get("bbox") or [],
+                extraction_method=extraction_method,
+            ))
+            cell_count += 1
+        if cell_count >= MAX_STRUCTURED_TABLE_CELL_RECORDS:
+            break
+    return records
+
+
+def _semantic_table_rows(table: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = table.get("semantic_data_rows")
+    if isinstance(rows, list) and rows:
+        return [row for row in rows if isinstance(row, dict)]
+
+    raw_rows = table.get("rows") if isinstance(table.get("rows"), list) else []
+    if not raw_rows:
+        return []
+    data_row_start_index = int(table.get("data_row_start_index") or 0)
+    row_label_col_index = int(table.get("row_label_col_index") or 0)
+    width = max((len(row) for row in raw_rows if isinstance(row, list)), default=0)
+    headers = table.get("headers") if isinstance(table.get("headers"), list) else []
+    data_col_indices = table.get("data_col_indices")
+    if not isinstance(data_col_indices, list) or not data_col_indices:
+        data_col_indices = [idx for idx in range(width) if idx != row_label_col_index]
+
+    semantic_rows: list[dict[str, Any]] = []
+    for row_index, row in enumerate(raw_rows[data_row_start_index:], start=data_row_start_index):
+        if not isinstance(row, list):
+            continue
+        row_label = ""
+        if row_label_col_index < len(row):
+            row_label = clean_text(row[row_label_col_index])
+        if not row_label:
+            row_label = next((clean_text(cell) for cell in row if clean_text(cell) and not _looks_numeric_like(clean_text(cell))), "")
+        pairs = []
+        for col_index in data_col_indices:
+            value = clean_text(row[col_index]) if col_index < len(row) else ""
+            if not value:
+                continue
+            column_label = clean_text(headers[col_index]) if col_index < len(headers) else f"col_{col_index + 1}"
+            pairs.append({
+                "column_index": col_index,
+                "column_label": column_label or f"col_{col_index + 1}",
+                "value": value,
+            })
+        if pairs:
+            semantic_rows.append({
+                "row_index": row_index,
+                "row_label": row_label or f"row_{row_index + 1}",
+                "pairs": pairs,
+            })
+    return semantic_rows
+
+
+def _financial_pair_text(pair: dict[str, Any]) -> str:
+    column_label = clean_text(pair.get("column_label")) or "value"
+    value = clean_text(pair.get("value"))
+    return f"{column_label}={value}" if value else column_label
+
+
+def _looks_numeric_like(text: str) -> bool:
+    clean = clean_text(text)
+    if not clean:
+        return False
+    if re.fullmatch(r"[()\-\s]*\d[\d,./%-]*", clean):
+        return True
+    if re.search(r"\d", clean) and re.search(r"(억원|백만원|만원|원|%|bp|bps|배|x|주|천주|십억원|조원|usd|krw)", clean, re.IGNORECASE):
+        return True
+    if re.fullmatch(r"[A-Za-z]{1,4}\s*\d+(?:\.\d+)?", clean):
+        return True
+    return False
 
 
 def _should_emit_table_record(
